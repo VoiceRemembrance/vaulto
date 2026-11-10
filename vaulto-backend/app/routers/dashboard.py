@@ -6,10 +6,9 @@ from app.db import get_db
 from app.dependencies import get_current_user
 from app.models import Transaction, User
 from app.schemas import MonthlySummary
+from app.settings_service import get_or_create_user_settings
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
-
-RATES = {"expense": 0.05, "savings": 0.25, "investment": 0.25, "emergency": 0.45}
 
 
 @router.get("/summary", response_model=MonthlySummary)
@@ -33,7 +32,14 @@ def summary(
         totals[row.category] += sign * row.amount
 
     income = max(0.0, totals["income"])
-    targets = {key: round(income * rate, 2) for key, rate in RATES.items()}
+    user_settings = get_or_create_user_settings(db, user.id)
+    rates = {
+        "expense": user_settings.expense_percentage,
+        "savings": user_settings.savings_percentage,
+        "investment": user_settings.investment_percentage,
+        "emergency": user_settings.emergency_percentage,
+    }
+    targets = {key: round(income * float(rate) / 100, 2) for key, rate in rates.items()}
     return MonthlySummary(
         month=month,
         income=round(income, 2),

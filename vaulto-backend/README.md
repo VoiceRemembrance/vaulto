@@ -35,6 +35,8 @@ For deployment, use PostgreSQL and set `DATABASE_URL` to your hosted PostgreSQL 
 - `POST /api/auth/login`
 - `POST /api/auth/guest`
 - `GET /api/auth/me`
+- `GET /api/settings`
+- `PUT /api/settings`
 - `GET /api/transactions`
 - `POST /api/transactions`
 - `DELETE /api/transactions/{transaction_id}`
@@ -48,6 +50,10 @@ For protected endpoints, click **Authorize** in `/docs` and enter:
 Categories: `income`, `expense`, `savings`, `investment`, `emergency`.
 Directions: `add` and `remove`.
 Amounts must be positive. A removal subtracts from that category's net total.
+Settings customize the four allocation percentages and visible category names; transaction category keys remain unchanged.
+
+## Database schema updates
+This project does not currently configure Alembic. Startup uses SQLAlchemy `Base.metadata.create_all`, which creates missing tables but does not alter existing tables. The settings feature adds only the new `user_settings` table, with a unique user foreign key and database constraints; it does not recreate or overwrite existing financial tables or records. This additive change is compatible with the existing startup path on SQLite and PostgreSQL. For future changes to existing production tables, introduce and run versioned Alembic migrations rather than relying on `create_all`.
 
 ## Important
 This is an initial development backend. Before public launch, add database migrations (Alembic), rate limiting, email verification/password reset if needed, stronger production secret management, and automated tests. Do not commit `.env` or real credentials.

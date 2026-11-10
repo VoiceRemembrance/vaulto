@@ -1,5 +1,6 @@
 from datetime import date, datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from decimal import Decimal
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class UserOut(BaseModel):
@@ -72,3 +73,40 @@ class MonthlySummary(BaseModel):
 
 class MonthlyAnalytics(BaseModel):
     months: list[dict[str, float | str]]
+
+
+class UserSettingsUpdate(BaseModel):
+    expense_percentage: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    savings_percentage: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    investment_percentage: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    emergency_percentage: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    expense_name: str = Field(min_length=1, max_length=40)
+    savings_name: str = Field(min_length=1, max_length=40)
+    investment_name: str = Field(min_length=1, max_length=40)
+    emergency_name: str = Field(min_length=1, max_length=40)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("expense_name", "savings_name", "investment_name", "emergency_name")
+    @classmethod
+    def strip_category_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Category names cannot be empty")
+        return value
+
+    @model_validator(mode="after")
+    def validate_percentage_total(self):
+        total = (
+            self.expense_percentage
+            + self.savings_percentage
+            + self.investment_percentage
+            + self.emergency_percentage
+        )
+        if total != Decimal("100"):
+            raise ValueError(f"Allocation percentages must total exactly 100% (received {total}%)")
+        return self
+
+
+class UserSettingsOut(UserSettingsUpdate):
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
