@@ -49,13 +49,7 @@ PostgreSQL serves as the primary database, hosted on Neon. The frontend is deplo
 
 Future development may include more detailed financial analytics, downloadable financial reports, enhanced budgeting insights, improved personalization, dynamic financial categories and AI-assisted financial insights. These additions could further expand Vaulto into a more comprehensive personal finance management platform.
 
+-------------------------------------------------------------------------------------------------
 
-**Live Application:** https://vaulto-kohl.vercel.app/
+**Disclaimer:** Vaulto is a personal finance tracking and planning tool, not a financial advisory service. All allocations and calculations are intended for informational purposes only. Investment entries represent contributions, not actual market value or returns. Users should make financial and investment decisions at their own discretion and consult a qualified financial advisor when necessary.
 
-**Backend API Documentation:** https://vaulto-oavo.onrender.com/docs
-
-*Vaulto is a financial tracking and planning tool, not a source of professional financial advice. Investment entries represent recorded contributions and do not reflect market returns.*
-
----
-
-**Give every amount a purpose. Track every movement. Understand your money.**
