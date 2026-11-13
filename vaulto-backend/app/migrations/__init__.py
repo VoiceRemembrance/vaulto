@@ -1,4 +1,4 @@
-from sqlalchemy import inspect, text
+from sqlalchemy import Integer, String, bindparam, inspect, text
 from sqlalchemy.engine import Engine
 
 
@@ -52,11 +52,16 @@ def run_migrations(engine: Engine) -> None:
                 connection.execute(text(
                     "INSERT INTO user_categories "
                     "(user_id, category_key, name, percentage, is_active, sort_order, category_type, created_at, updated_at) "
-                    "SELECT settings.user_id, :category_key, settings." + name_column + ", settings."
-                    + percentage_column + ", TRUE, :sort_order, :category_type, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP "
+                    "SELECT settings.user_id, CAST(:category_key AS VARCHAR(40)), settings." + name_column + ", settings."
+                    + percentage_column + ", TRUE, CAST(:sort_order AS INTEGER), "
+                    "CAST(:category_type AS VARCHAR(20)), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP "
                     "FROM user_settings AS settings WHERE NOT EXISTS ("
                     "SELECT 1 FROM user_categories WHERE user_categories.user_id = settings.user_id "
-                    "AND user_categories.category_key = :category_key)"
+                    "AND user_categories.category_key = CAST(:category_key AS VARCHAR(40)))"
+                ).bindparams(
+                    bindparam("category_key", type_=String(40)),
+                    bindparam("sort_order", type_=Integer()),
+                    bindparam("category_type", type_=String(20)),
                 ), {
                     "category_key": key,
                     "sort_order": order,
