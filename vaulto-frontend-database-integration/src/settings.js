@@ -9,12 +9,6 @@ export const DEFAULT_SETTINGS = {
   savings_name: 'Savings',
   investment_name: 'Investments',
   emergency_name: 'Emergency Fund',
-  categories: [
-    { id: 'expense', name: 'Guilt-free Expense', percentage: 5, active: true },
-    { id: 'savings', name: 'Savings', percentage: 25, active: true },
-    { id: 'investment', name: 'Investments', percentage: 25, active: true },
-    { id: 'emergency', name: 'Emergency Fund', percentage: 45, active: true },
-  ],
 };
 
 const CATEGORY_DEFINITIONS = [
@@ -24,25 +18,11 @@ const CATEGORY_DEFINITIONS = [
   { id: 'emergency', tint: 'gold', color: '#d9a743', Icon: ShieldCheck },
 ];
 
-export function normalizeSettings(settings = DEFAULT_SETTINGS) {
-  const categories = Array.isArray(settings.categories) && settings.categories.length ? settings.categories : DEFAULT_SETTINGS.categories;
-  return {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-    categories,
-  };
-}
-
 export function getBuckets(settings) {
-  const normalized = normalizeSettings(settings);
-  const categories = (normalized.categories || DEFAULT_SETTINGS.categories).filter(item => item.active !== false);
-  return categories.map((category, index) => {
-    const palette = CATEGORY_DEFINITIONS[index % CATEGORY_DEFINITIONS.length] || CATEGORY_DEFINITIONS[0];
-    return {
-      ...palette,
-      id: category.id,
-      name: category.name,
-      pct: Number(category.percentage ?? 0),
-    };
-  });
+  return CATEGORY_DEFINITIONS.map(({ id, ...category }) => ({
+    ...category,
+    id,
+    name: settings[`${id}_name`],
+    pct: Number(settings[`${id}_percentage`]),
+  }));
 }

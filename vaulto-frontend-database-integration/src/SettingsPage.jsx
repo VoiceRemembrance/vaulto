@@ -63,12 +63,6 @@ export default function SettingsPage({ settings, onSave, onRestore, onDirtyChang
     setMessage('');
     setError('');
     try {
-      const categories = CATEGORIES.map(([id]) => ({
-        id,
-        name: draft[`${id}_name`].trim(),
-        percentage: Number(draft[`${id}_percentage`]),
-        active: true,
-      }));
       await onSave({
         ...Object.fromEntries(CATEGORIES.map(([id]) => [
           `${id}_percentage`,
@@ -78,7 +72,6 @@ export default function SettingsPage({ settings, onSave, onRestore, onDirtyChang
           `${id}_name`,
           draft[`${id}_name`].trim(),
         ])),
-        categories,
       });
       setMessage('Your allocation settings have been saved.');
     } catch (saveError) {
