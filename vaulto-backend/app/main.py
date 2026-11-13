@@ -2,11 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db import Base, engine
-from app.migrations import run_migrations
-from app.routers import analytics, auth, categories, dashboard, settings as settings_router, transactions
+from app.routers import analytics, auth, dashboard, settings as settings_router, transactions
 
 Base.metadata.create_all(bind=engine)
-run_migrations(engine)
 
 app = FastAPI(
     title="Vaulto API",
@@ -25,7 +23,6 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(transactions.router)
-app.include_router(categories.router)
 app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(settings_router.router)

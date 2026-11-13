@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db import get_db
 from app.dependencies import get_current_user
-from app.models import User
+from app.models import User, UserSettings
 from app.schemas import AuthResponse, LoginIn, RegisterIn, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -19,6 +19,7 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
     user = User(name=payload.name.strip(), email=email, hashed_password=hash_password(payload.password))
     db.add(user)
     db.flush()
+    db.add(UserSettings(user_id=user.id))
     db.commit()
     db.refresh(user)
     return AuthResponse(access_token=create_access_token(str(user.id)), user=UserOut.model_validate(user))
@@ -41,6 +42,7 @@ def guest_login(db: Session = Depends(get_db)):
     )
     db.add(user)
     db.flush()
+    db.add(UserSettings(user_id=user.id))
     db.commit()
     db.refresh(user)
     return AuthResponse(access_token=create_access_token(str(user.id)), user=UserOut.model_validate(user))

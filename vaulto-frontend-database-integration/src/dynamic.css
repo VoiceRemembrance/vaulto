@@ -1,4 +1,0 @@
-.bucket-grid{grid-template-columns:repeat(auto-fit,minmax(225px,1fr))}
-.bucket-buttons button:disabled{opacity:.5;cursor:not-allowed}
-.split i:nth-child(1){width:100%;background:#56b9a6}
-.category-setup-empty .primary{margin-top:12px}

@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, saveToken, getToken, clearToken } from './api.js';
 import SettingsPage from './SettingsPage.jsx';
 import { DEFAULT_SETTINGS, getBuckets } from './settings.js';
 import './settings.css';
 import {
   ArrowDownLeft, ArrowUpRight, Bell, CalendarDays, ChartNoAxesCombined, Check,
-  Eye, EyeOff, IndianRupee, LayoutDashboard, LogOut, Menu, Plus,
-  Settings, ShieldCheck, ShoppingBag, Sparkles, Trash2, Wallet, X,
+  ChevronDown, Eye, EyeOff, IndianRupee, LayoutDashboard, LogOut, Menu, Plus,
+  PiggyBank, Settings, ShieldCheck, ShoppingBag, Sparkles, TrendingUp, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
-  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer,
+  Tooltip, XAxis, YAxis,
 } from 'recharts';
 
 const monthKey = (date = new Date()) =>
@@ -23,18 +24,10 @@ const monthLabel = key => {
 };
 const currentMonth = monthKey();
 
-async function loadCategorySettings() {
-  const [activeCategories, archivedCategories] = await Promise.all([api.categories(), api.archivedCategories()]);
-  return {
-    categories: [...activeCategories, ...archivedCategories]
-      .sort((left, right) => left.sort_order - right.sort_order),
-  };
-}
-
 function totals(entries, month) {
-  const result = {};
+  const result = { expense: 0, savings: 0, investment: 0, emergency: 0 };
   entries.filter(entry => entry.month === month).forEach(entry => {
-    result[entry.bucket] = (result[entry.bucket] || 0) + (entry.direction === 'remove' ? -entry.amount : entry.amount);
+    result[entry.bucket] += entry.direction === 'remove' ? -entry.amount : entry.amount;
   });
   return result;
 }
@@ -95,8 +88,8 @@ function Auth({ done }) {
         <div className="preview">
           <div className="preview-top">Your monthly money plan <span>On track</span></div>
           <b>₹20,000</b><small>monthly income</small>
-          <div className="split"><i/></div>
-          <div className="preview-legend">A personal plan that grows with you</div>
+          <div className="split"><i/><i/><i/><i/></div>
+          <div className="preview-legend">Spend 5%　 Save 25%　 Invest 25%　 Protect 45%</div>
         </div>
         <small className="visual-foot">A little clarity goes a long way.</small>
       </section>
@@ -177,7 +170,7 @@ function Ring({ value, color }) {
   </svg><div><b>{Math.round(value)}%</b><small>of goal</small></div></div>;
 }
 
-function BucketCard({ bucket, income, target, total, add, remove, canCreate }) {
+function BucketCard({ bucket, income, target, total, add, remove }) {
   const done = Math.max(0, total);
   const progress = target ? done / target * 100 : 0;
   const remaining = Math.max(0, target - done);
@@ -188,7 +181,7 @@ function BucketCard({ bucket, income, target, total, add, remove, canCreate }) {
     <div className="bucket-numbers"><div><strong>{money(done)}</strong><small>of {money(target)} recommended</small></div><Ring value={progress} color={bucket.color}/></div>
     <div className="track"><i style={{ width: `${Math.min(100, progress)}%`, background: bucket.color }}/></div>
     <div className="bucket-foot"><span>{remaining ? `${money(remaining)} to go` : 'Monthly target reached'}</span><b>{Math.round(progress)}%</b></div>
-    <div className="bucket-buttons"><button disabled={!canCreate} onClick={() => add(bucket, 'add')}><Plus size={14}/> Add entry</button><button disabled={!canCreate} onClick={() => remove(bucket, 'remove')}><ArrowDownLeft size={14}/> Remove</button></div>
+    <div className="bucket-buttons"><button onClick={() => add(bucket, 'add')}><Plus size={14}/> Add entry</button><button onClick={() => remove(bucket, 'remove')}><ArrowDownLeft size={14}/> Remove</button></div>
   </article>;
 }
 
@@ -205,7 +198,7 @@ function EntryModal({ bucket, mode, close, save }) {
       <form onSubmit={event => {
         event.preventDefault();
         if (!title.trim() || Number(amount) <= 0) { setError('Enter a description and an amount greater than zero.'); return; }
-        save({ title: title.trim(), amount: Number(amount), date, note, categoryId: bucket.id, direction: mode });
+        save({ title: title.trim(), amount: Number(amount), date, note, bucket: bucket.id, direction: mode });
       }}>
         <label>Description<input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="e.g. Monthly contribution"/></label>
         <label>Amount (₹)<div className="amount"><IndianRupee size={16}/><input type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0"/></div></label>
@@ -218,127 +211,69 @@ function EntryModal({ bucket, mode, close, save }) {
   </div>;
 }
 
-function Overview({ data, buckets, month, onMonthChange, onSetIncome, open, del, onOpenSettings, busy, error }) {
-  const income = Number(data.income[month] || 0);
-  const monthSummary = data.monthSummary;
-  const monthBuckets = monthSummary?.historical_configuration_available
-    ? getBuckets({ categories: monthSummary.categories })
-    : [];
-  const availableIds = new Set(buckets.map(bucket => String(bucket.id)));
+function Overview({ data, buckets, onSetIncome, open, del, busy, error }) {
+  const income = Number(data.income[currentMonth] || 0);
+  const currentTotals = totals(data.entries, currentMonth);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(income));
   const [savingIncome, setSavingIncome] = useState(false);
-  const recent = data.entries.filter(entry => entry.month === month && entry.bucket !== 'income')
+  const recent = data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income')
     .slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
   return <div className="content">
-    <div className="welcome"><div><span className="eyebrow dark">YOUR FINANCIAL SNAPSHOT</span><h1>Money looks better<br/><em>in balance.</em></h1><p>A clear view of where your money goes — and where it can take you.</p></div><label className="month-pill analytics-month"><CalendarDays size={15}/><input aria-label="Select dashboard month" type="month" value={month} onChange={event => onMonthChange(event.target.value)}/></label></div>
+    <div className="welcome"><div><span className="eyebrow dark">YOUR FINANCIAL SNAPSHOT</span><h1>Money looks better<br/><em>in balance.</em></h1><p>A clear view of where your money goes — and where it can take you.</p></div><div className="month-pill"><CalendarDays size={15}/>{new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}<ChevronDown size={14}/></div></div>
     {error && <p className="error" role="alert">{error}</p>}
     <section className="income-card"><div>
       <span className="income-label"><Wallet size={16}/> MONTHLY INCOME</span>
-      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0), month); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number">{money(income)} <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
+      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0)); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number">{money(income)} <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
       <p>Your income is the starting point for this month's money plan.</p>
-    </div><div className="income-stats"><div><small>Allocated so far</small><b>{money(monthBuckets.reduce((sum, bucket) => sum + Math.max(0, bucket.actual_amount || 0), 0))}</b></div><i/><div><small>Plan distribution</small><b>{monthBuckets.reduce((sum, bucket) => sum + bucket.pct, 0)}%</b></div></div><span className="rupee-art">₹</span></section>
+    </div><div className="income-stats"><div><small>Allocated so far</small><b>{money(buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0))}</b></div><i/><div><small>Plan distribution</small><b>{buckets.reduce((sum, bucket) => sum + bucket.pct, 0)}%</b></div></div><span className="rupee-art">₹</span></section>
     <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Track each contribution below.</p></div><span className="recommend"><Sparkles size={14}/> Recommended split</span></div>
-    {!monthSummary?.historical_configuration_available && (buckets.length
-      ? <div className="empty">Allocation history is unavailable for this month.</div>
-      : <div className="empty category-setup-empty">Create your first allocation categories in Settings to start your plan.<br/><button className="primary" onClick={onOpenSettings}>Set up categories <ArrowUpRight size={14}/></button></div>)}
-    <div className="bucket-grid">{monthBuckets.map(bucket => <BucketCard
-      key={bucket.id}
-      bucket={bucket}
-      income={income}
-      target={Number(bucket.allocated_amount || 0)}
-      total={Number(bucket.actual_amount || 0)}
-      add={open}
-      remove={open}
-      canCreate={month === currentMonth && availableIds.has(String(bucket.id))}
-    />)}</div>
-    {monthSummary?.expense_variance !== null && monthSummary?.expense_variance !== undefined && <div className={`surplus-card ${monthSummary.expense_status}`}>
-      <div><small>MONTHLY EXPENSE POSITION</small><b>{monthSummary.expense_status === 'balanced' ? 'Expense budget balanced' : monthSummary.expense_status === 'surplus' ? 'Expense budget surplus' : 'Expense budget deficit'}</b></div>
-      <strong>{monthSummary.expense_status === 'balanced' ? money(0) : money(Math.abs(monthSummary.expense_variance))}</strong>
-    </div>}
-    <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{data.entries.filter(entry => entry.month === month && entry.bucket !== 'income').length} entries this month</span></div>
+    <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open}/>)}</div>
+    <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income').length} entries this month</span></div>
     <div className="entries">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
-      const bucket = buckets.find(item => String(item.id) === String(entry.bucket));
-      const Icon = bucket?.Icon || ShoppingBag;
-      return <div className="entry" key={entry.id}><span className={`entry-icon ${bucket?.tint || 'peach'}`}><Icon size={17}/></span><div className="entry-desc"><b>{entry.title}</b><small>{entry.categoryName || bucket?.name || 'Archived category'} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small></div><strong className={entry.direction === 'remove' ? 'removed' : ''}>{entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}</strong><button onClick={() => del(entry.id)} title="Delete entry"><Trash2 size={15}/></button></div>;
+      const bucket = buckets.find(item => item.id === entry.bucket);
+      if (!bucket) return null;
+      const Icon = bucket.Icon;
+      return <div className="entry" key={entry.id}><span className={`entry-icon ${bucket.tint}`}><Icon size={17}/></span><div className="entry-desc"><b>{entry.title}</b><small>{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small></div><strong className={entry.direction === 'remove' ? 'removed' : ''}>{entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}</strong><button onClick={() => del(entry.id)} title="Delete entry"><Trash2 size={15}/></button></div>;
     }) : <div className="empty">No entries yet. Add your first transaction to start tracking.</div>}</div>
-    <p className="disclaimer"><ShieldCheck size={14}/> Planning guideline, not financial advice. Contribution categories track additions and removals, not market returns.</p>
+    <p className="disclaimer"><ShieldCheck size={14}/> Planning guideline, not financial advice. {buckets.find(bucket => bucket.id === 'investment')?.name} values show contributions only — not market returns.</p>
   </div>;
 }
 
-function Analytics() {
-  const [month, setMonth] = useState(currentMonth);
-  const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError('');
-    api.analytics(month).then(result => {
-      if (active) setReport(result);
-    }).catch(requestError => {
-      if (active) setError(requestError.message || 'Unable to load monthly analytics.');
-    }).finally(() => {
-      if (active) setLoading(false);
+function Analytics({ data, buckets }) {
+  const rows = useMemo(() => {
+    const keys = new Set([...Object.keys(data.income), ...data.entries.map(entry => entry.month)]);
+    if (!keys.size) keys.add(currentMonth);
+    return [...keys].sort().slice(-6).map(key => {
+      const monthTotals = totals(data.entries, key);
+      return {
+        month: monthLabel(key),
+        income: Number(data.income[key] || 0),
+        expense: Math.max(0, monthTotals.expense),
+        savings: Math.max(0, monthTotals.savings),
+        investment: Math.max(0, monthTotals.investment),
+        emergency: Math.max(0, monthTotals.emergency),
+      };
     });
-    return () => { active = false; };
-  }, [month]);
-
-  const categories = report?.categories || [];
-  const monthHasActivity = categories.some(category => Number(category.actual_amount) !== 0)
-    || Number(report?.income || 0) !== 0;
-  const statusLabel = category => {
-    if (category.status === 'balanced') return `Balanced · ${money(0)}`;
-    if (category.category_type === 'expense') {
-      return category.status === 'surplus'
-        ? `Surplus · ${money(category.variance_amount)}`
-        : `Deficit · ${money(Math.abs(category.variance_amount))}`;
-    }
-    return category.status === 'above_target'
-      ? `Surplus · ${money(category.variance_amount)}`
-      : `Deficit · ${money(Math.abs(category.variance_amount))}`;
-  };
-
+  }, [data]);
+  const average = key => rows.reduce((sum, row) => sum + row[key], 0) / (rows.length || 1);
+  const categoryName = id => buckets.find(bucket => bucket.id === id)?.name || id;
+  const averages = [
+    ['expense', categoryName('expense'), ShoppingBag, 'peach'],
+    ['savings', categoryName('savings'), PiggyBank, 'mint'],
+    ['investment', categoryName('investment'), TrendingUp, 'lavender'],
+  ];
   return <div className="content">
-    <div className="welcome">
-      <div><span className="eyebrow dark">YOUR MONEY, OVER TIME</span><h1>See the bigger <em>picture.</em></h1><p>Review your category targets and activity for any month.</p></div>
-      <label className="month-pill analytics-month"><CalendarDays size={15}/><input aria-label="Select analytics month" type="month" value={month} onChange={event => setMonth(event.target.value)}/></label>
-    </div>
-    {error && <p className="error" role="alert">{error}</p>}
-    <section className="chart-card">
-      <div className="chart-head"><div><small>MONTHLY BREAKDOWN · {monthLabel(month)}</small><h2>Where your money goes</h2><p>Actual amounts compared with this month's saved targets.</p></div><span className="chart-tag">INR · ₹</span></div>
-      {loading ? <div className="empty">Loading your monthly report…</div>
-        : !report?.historical_configuration_available ? <div className="empty">Category configuration is unavailable for {monthLabel(month)}. No historical allocation snapshot was recorded for this month.</div>
-          : <div className="chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={categories} margin={{ top: 10, right: 10, left: 0, bottom: 6 }}>
-            <CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#e9edf2"/>
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 11 }}/>
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 11 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={55}/>
-            <Tooltip formatter={value => money(value)}/>
-            <Legend iconType="circle"/>
-            <Bar dataKey="actual_amount" name="Actual" fill="#56b9a6" radius={[4, 4, 0, 0]}/>
-            <Bar dataKey="allocated_amount" name="Budget / target" fill="#8b82e8" radius={[4, 4, 0, 0]}/>
-          </BarChart></ResponsiveContainer></div>}
+    <div className="welcome"><div><span className="eyebrow dark">YOUR MONEY, OVER TIME</span><h1>See the bigger <em>picture.</em></h1><p>Patterns become clearer when you look beyond a single month.</p></div><div className="month-pill"><CalendarDays size={15}/>Last {rows.length} months<ChevronDown size={14}/></div></div>
+    <div className="averages">{averages.map(([key, label, Icon, tint]) => <div className="average" key={key}><span className={`average-icon ${tint}`}><Icon size={18}/></span><small>{label}</small><b>{money(average(key))}</b><em>Monthly average</em></div>)}</div>
+    <section className="chart-card"><div className="chart-head"><div><small>MONTHLY BREAKDOWN</small><h2>Where your money goes</h2><p>Actual tracked amounts, month by month.</p></div><span className="chart-tag">INR · ₹</span></div>
+      <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={rows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}><defs><linearGradient id="ex" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f28b70" stopOpacity=".2"/><stop offset="100%" stopColor="#f28b70" stopOpacity="0"/></linearGradient><linearGradient id="sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#56b9a6" stopOpacity=".2"/><stop offset="100%" stopColor="#56b9a6" stopOpacity="0"/></linearGradient></defs><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#e9edf2"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 11 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={55}/><Tooltip formatter={value => money(value)}/><Legend iconType="circle"/><Area type="monotone" dataKey="expense" name={categoryName('expense')} stroke="#f28b70" fill="url(#ex)" strokeWidth={2.5}/><Area type="monotone" dataKey="savings" name={categoryName('savings')} stroke="#56b9a6" fill="url(#sv)" strokeWidth={2.5}/><Area type="monotone" dataKey="investment" name={categoryName('investment')} stroke="#8b82e8" fill="transparent" strokeWidth={2.5}/></AreaChart></ResponsiveContainer></div>
     </section>
-    <section className="chart-card monthly-table-card">
-      <div className="chart-head"><div><small>CATEGORY SUMMARY</small><h2>{monthLabel(month)} · category-wise</h2><p>Contribution categories show actual additions less withdrawals.</p></div></div>
-      {!loading && report?.historical_configuration_available && <>
-        <div className="monthly-table-wrap"><table className="monthly-table">
-          <thead><tr><th>Category</th><th>Amount Added</th><th>Surplus / Deficit</th></tr></thead>
-          <tbody>{categories.map(category => <tr key={category.id}>
-            <td>{category.name}</td>
-            <td>{money(category.actual_amount)}</td>
-            <td className={category.status === 'deficit' || category.status === 'underfunded' ? 'negative' : category.status === 'balanced' ? '' : 'positive'}>{statusLabel(category)}</td>
-          </tr>)}</tbody>
-        </table></div>
-        {!monthHasActivity && <p className="monthly-empty">No transactions recorded for this month. Targets and zero amounts are shown above.</p>}
-      </>}
-      {!loading && !report?.historical_configuration_available && <div className="empty">The category summary is unavailable because no configuration snapshot exists for this month.</div>}
-      {loading && <div className="empty">Loading your category summary…</div>}
+    <section className="chart-card"><div className="chart-head"><div><small>INCOME & RESERVES</small><h2>Your monthly income</h2><p>Income and {categoryName('emergency').toLowerCase()} contributions.</p></div></div>
+      <div className="chart short"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows}><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#e9edf2"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8993a4', fontSize: 11 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={55}/><Tooltip formatter={value => money(value)}/><Legend iconType="circle"/><Line dataKey="income" name="Income" stroke="#263c63" strokeWidth={2.5}/><Line dataKey="emergency" name={categoryName('emergency')} stroke="#e7b75e" strokeWidth={2.5}/></LineChart></ResponsiveContainer></div>
     </section>
-    <div className="analytics-note"><ShieldCheck size={18}/><div><b>How these numbers work</b><p>Expense categories compare spending with allocated budgets. Savings and investment categories compare recorded contributions with targets; investment returns are not tracked.</p></div></div>
-    <p className="disclaimer">Analytics are calculated from your saved monthly category configuration and transactions.</p>
+    <div className="analytics-note"><ShieldCheck size={18}/><div><b>How these numbers work</b><p>Monthly averages use months with saved income or activity. {categoryName('savings')}, {categoryName('investment')} and {categoryName('emergency').toLowerCase()} are net contributions after removals. {categoryName('investment')} profit or loss is excluded.</p></div></div>
+    <p className="disclaimer">Analytics are calculated from transactions retrieved from your Vaulto account.</p>
   </div>;
 }
 
@@ -347,57 +282,44 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [data, setData] = useState({ income: {}, entries: [], targets: {}, monthSummary: null });
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [data, setData] = useState({ income: {}, entries: [], targets: {} });
   const [page, setPage] = useState('overview');
   const [modal, setModal] = useState(null);
   const [menu, setMenu] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [settingsDirty, setSettingsDirty] = useState(false);
-  const financialLoadId = useRef(0);
   const buckets = useMemo(() => getBuckets(settings), [settings]);
 
-  async function loadFinancialData(month = selectedMonth) {
-    const loadId = ++financialLoadId.current;
+  async function loadFinancialData() {
     setBusy(true);
     setError('');
     try {
-      const [summary, records] = await Promise.all([api.summary(month), api.transactions()]);
+      const [summary, records] = await Promise.all([api.summary(currentMonth), api.transactions()]);
       const entries = records.map(record => {
         const date = new Date(record.transaction_date);
-        return {
-          id: record.id,
-          bucket: record.category_id === null ? record.category : String(record.category_id),
-          categoryName: record.category_name,
-          categoryType: record.category_type,
-          direction: record.direction,
-          amount: Number(record.amount),
-          title: record.description,
-          date: record.transaction_date,
-          month: monthKey(date),
-        };
+        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, date: record.transaction_date, month: monthKey(date) };
       });
       const income = {};
       for (const record of records) {
-        if (record.category === 'income' && record.category_id === null) {
+        if (record.category === 'income') {
           const month = monthKey(new Date(record.transaction_date));
           income[month] = (income[month] || 0) + (record.direction === 'remove' ? -Number(record.amount) : Number(record.amount));
         }
       }
-      income[month] = Number(summary.income) || 0;
-      if (loadId !== financialLoadId.current) return;
-      setData({ income, entries, targets: summary.allocation_targets, monthSummary: summary });
+      income[currentMonth] = Number(summary.income) || 0;
+      setData({ income, entries, targets: summary.allocation_targets });
     } catch (requestError) {
-      if (loadId === financialLoadId.current) setError(requestError.message || 'Unable to load your financial data.');
+      setError(requestError.message || 'Unable to load your financial data.');
     } finally {
-      if (loadId === financialLoadId.current) setBusy(false);
+      setBusy(false);
     }
   }
 
   async function loadSettings() {
     setError('');
-    setSettings(await loadCategorySettings());
+    const savedSettings = await api.settings();
+    setSettings(savedSettings);
     setSettingsLoaded(true);
     await loadFinancialData();
   }
@@ -410,7 +332,7 @@ export default function App() {
       if (!active) return;
       setUser(currentUser);
       try {
-        const savedSettings = await loadCategorySettings();
+        const savedSettings = await api.settings();
         if (!active) return;
         setSettings(savedSettings);
         setSettingsLoaded(true);
@@ -428,7 +350,8 @@ export default function App() {
     setUser(currentUser);
     setError('');
     try {
-      setSettings(await loadCategorySettings());
+      const savedSettings = await api.settings();
+      setSettings(savedSettings);
       setSettingsLoaded(true);
       await loadFinancialData();
     } catch (requestError) {
@@ -451,8 +374,7 @@ export default function App() {
     setSettings(DEFAULT_SETTINGS);
     setSettingsLoaded(false);
     setSettingsDirty(false);
-    setSelectedMonth(currentMonth);
-    setData({ income: {}, entries: [], targets: {}, monthSummary: null });
+    setData({ income: {}, entries: [], targets: {} });
     setError('');
   }
 
@@ -470,17 +392,20 @@ export default function App() {
   }, [settingsDirty]);
 
   async function saveSettings(payload) {
-    await api.saveCategoryConfiguration(payload);
-    const saved = await loadCategorySettings();
+    const saved = await api.updateSettings(payload);
     setSettings(saved);
-    await loadFinancialData(selectedMonth);
+    await loadFinancialData();
     return saved;
+  }
+
+  async function restoreSettings() {
+    return saveSettings(DEFAULT_SETTINGS);
   }
 
   async function saveEntry(entry) {
     setError('');
     try {
-      await api.createTransaction({ category_id: entry.categoryId, direction: entry.direction, amount: entry.amount, description: entry.title, transaction_date: entry.date });
+      await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, transaction_date: entry.date });
       setModal(null);
       await loadFinancialData();
     } catch (requestError) {
@@ -498,8 +423,8 @@ export default function App() {
     }
   }
 
-  async function setIncome(nextIncome, month = selectedMonth) {
-    const previous = Number(data.income[month] || 0);
+  async function setIncome(nextIncome) {
+    const previous = Number(data.income[currentMonth] || 0);
     const difference = nextIncome - previous;
     if (!difference) return true;
     try {
@@ -508,9 +433,9 @@ export default function App() {
         direction: difference > 0 ? 'add' : 'remove',
         amount: Math.abs(difference),
         description: difference > 0 ? 'Monthly income added' : 'Monthly income adjustment',
-        transaction_date: `${month}-01`,
+        transaction_date: new Date().toISOString().slice(0, 10),
       });
-      await loadFinancialData(month);
+      await loadFinancialData();
       return true;
     } catch (requestError) {
       setError(requestError.message || 'Unable to update income.');
@@ -527,9 +452,9 @@ export default function App() {
     <main>
       <Header page={page} setOpen={setMenu} user={user}/>
       {error && page !== 'overview' && <p className="error app-error" role="alert">{error}</p>}
-      {page === 'overview' && <Overview data={data} buckets={buckets} month={selectedMonth} onMonthChange={month => { if (/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) { setSelectedMonth(month); loadFinancialData(month); } }} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} onOpenSettings={() => setPage('settings')} busy={busy} error={error}/>}
-      {page === 'analytics' && <Analytics/>}
-      {page === 'settings' && <SettingsPage settings={settings} onSave={saveSettings} onDirtyChange={onSettingsDirtyChange}/>}
+      {page === 'overview' && <Overview data={data} buckets={buckets} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error}/>}
+      {page === 'analytics' && <Analytics data={data} buckets={buckets}/>}
+      {page === 'settings' && <SettingsPage settings={settings} onSave={saveSettings} onRestore={restoreSettings} onDirtyChange={onSettingsDirtyChange}/>}
     </main>
     {modal && <EntryModal bucket={modal.bucket} mode={modal.mode} close={() => setModal(null)} save={saveEntry}/>}
   </div>;

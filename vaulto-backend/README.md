@@ -37,29 +37,23 @@ For deployment, use PostgreSQL and set `DATABASE_URL` to your hosted PostgreSQL 
 - `GET /api/auth/me`
 - `GET /api/settings`
 - `PUT /api/settings`
-- `GET /api/categories`
-- `POST /api/categories`
-- `PUT /api/categories/configuration`
-- `PUT /api/categories/{category_id}`
-- `PATCH /api/categories/{category_id}/archive`
-- `PATCH /api/categories/{category_id}/restore`
-- `GET /api/categories/archived`
 - `GET /api/transactions`
 - `POST /api/transactions`
 - `DELETE /api/transactions/{transaction_id}`
 - `GET /api/dashboard/summary?month=YYYY-MM`
-- `GET /api/analytics/monthly?month=YYYY-MM`
+- `GET /api/analytics/monthly?months=6`
 
 For protected endpoints, click **Authorize** in `/docs` and enter:
 `Bearer YOUR_ACCESS_TOKEN`
 
 ## Transaction model
-Income uses the special `income` category. Every other transaction submits a `category_id` from the authenticated user's active categories. Categories have a type (`expense` or `contribution`); amounts must be positive and a removal subtracts from that category's net monthly amount. Category names are snapshots on newly recorded transactions, so renaming does not change those transaction labels.
+Categories: `income`, `expense`, `savings`, `investment`, `emergency`.
+Directions: `add` and `remove`.
+Amounts must be positive. A removal subtracts from that category's net total.
+Settings customize the four allocation percentages and visible category names; transaction category keys remain unchanged.
 
 ## Database schema updates
-Startup runs the versioned additive migration `001_dynamic_categories` before serving requests. It adds stable category references and transaction name/type snapshots, backfills category IDs where an existing category key provides an unambiguous match, and copies legacy allocation values into missing category records. It preserves transaction rows and leaves the old `user_settings` table untouched for data retention; the application no longer models or reads its fixed fields. New accounts create their own categories in Settings. The migration does not fabricate historical monthly configurations. A `category_month_snapshots` record is captured for the current month as categories are used or changed; snapshots for completed months are immutable. If no historical snapshot exists, monthly analytics reports that configuration as unavailable instead of using today's settings.
-
-`Base.metadata.create_all` remains in place for newly added tables. Existing user settings and transaction data are retained; the legacy settings API remains for compatibility, while category management uses `/api/categories`.
+This project does not currently configure Alembic. Startup uses SQLAlchemy `Base.metadata.create_all`, which creates missing tables but does not alter existing tables. The settings feature adds only the new `user_settings` table, with a unique user foreign key and database constraints; it does not recreate or overwrite existing financial tables or records. This additive change is compatible with the existing startup path on SQLite and PostgreSQL. For future changes to existing production tables, introduce and run versioned Alembic migrations rather than relying on `create_all`.
 
 ## Important
 This is an initial development backend. Before public launch, add database migrations (Alembic), rate limiting, email verification/password reset if needed, stronger production secret management, and automated tests. Do not commit `.env` or real credentials.
