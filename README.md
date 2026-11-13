@@ -34,7 +34,6 @@ The frontend is developed using React.js, JavaScript, HTML5, and CSS3, with Vite
 
 The backend is developed using Python and FastAPI, providing REST API endpoints and handling application logic and authentication. SQLAlchemy is used for database integration, while JWT-based authentication and password hashing support account security.
 
-PostgreSQL serves as the primary database, hosted on Neon. The frontend is deployed through Vercel, and the backend is deployed through Render. Git and GitHub are used for version control and source code management.
 
 ## System Architecture
 
@@ -44,29 +43,16 @@ The frontend and backend are deployed independently, allowing the application in
 
 ## Deployment
 
-Vaulto is deployed as an online web application. The frontend is hosted on Vercel, the backend API is hosted on Render, and the PostgreSQL database is managed through Neon. This deployment setup makes the application accessible through a public web address without requiring users to run the project locally.
+PostgreSQL serves as the primary database, hosted on Neon. The frontend is deployed through Vercel, and the backend is deployed through Render. This deployment setup makes the application accessible through a public web address without requiring users to run the project locally.
 
 ## Future Scope
 
-Future development may include more detailed financial analytics, downloadable financial reports, enhanced budgeting insights, improved personalization, and AI-assisted financial insights. These additions could further expand Vaulto into a more comprehensive personal finance management platform.
+Future development may include more detailed financial analytics, downloadable financial reports, enhanced budgeting insights, improved personalization, dynamic financial categories and AI-assisted financial insights. These additions could further expand Vaulto into a more comprehensive personal finance management platform.
 
-## Project Information
-
-Vaulto is an independently developed full-stack web development project that brings together frontend engineering, backend development, database integration, authentication, API communication, and cloud deployment. It represents practical experience in designing and developing an end-to-end web application.
-
-**Project Name:** Vaulto
-
-**Tagline:** Money, in Balance.
-
-**Project Category:** Full-Stack Web Development / Personal Finance Management
-
-**Development Status:** Publicly Deployed
 
 **Live Application:** https://vaulto-kohl.vercel.app/
 
 **Backend API Documentation:** https://vaulto-oavo.onrender.com/docs
-
-**Repository:** https://github.com/VoiceRemembrance/vaulto
 
 *Vaulto is a financial tracking and planning tool, not a source of professional financial advice. Investment entries represent recorded contributions and do not reflect market returns.*
 
