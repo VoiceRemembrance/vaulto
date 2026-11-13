@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Numeric, String, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Numeric, String, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
@@ -18,6 +18,7 @@ class User(Base):
     settings: Mapped["UserSettings | None"] = relationship(
         back_populates="user", cascade="all, delete-orphan", uselist=False
     )
+    categories: Mapped[list["UserCategory"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class UserSettings(Base):
@@ -50,6 +51,23 @@ class UserSettings(Base):
     emergency_name: Mapped[str] = mapped_column(String(40), default="Emergency Fund", server_default=text("'Emergency Fund'"))
 
     user: Mapped[User] = relationship(back_populates="settings")
+
+
+class UserCategory(Base):
+    __tablename__ = "user_categories"
+    __table_args__ = (
+        UniqueConstraint("user_id", "category_key", name="uq_user_category_key"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category_key: Mapped[str] = mapped_column(String(40), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    percentage: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    user: Mapped[User] = relationship(back_populates="categories")
 
 
 class Transaction(Base):
