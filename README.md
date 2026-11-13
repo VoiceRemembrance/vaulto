@@ -1,117 +1,75 @@
 # Vaulto – Money, in Balance.
 
-## About Vaulto
+## Project Overview
 
-Vaulto is a personal finance management web application that helps individuals organize, allocate, and track their money.
+Vaulto is a full-stack personal finance management web application developed to simplify the way individuals organize, allocate, and track their money. It provides a centralized platform where users can manage their financial activities, customize income allocation percentages, record transactions, and monitor their monthly financial progress through an intuitive dashboard.
 
-Its central idea is simple: decide where your income should go, record your financial activities, and monitor how your money is being used.
+The project is built around a simple concept: every amount of money should have a purpose. Instead of merely tracking income and expenses, Vaulto encourages users to plan how their income is distributed and compare their actual financial activities against their planned allocations.
 
-Vaulto provides a centralized platform for managing expenses, savings, investments, and other financial commitments.
+## Problem Statement
 
-## Why Vaulto?
+Managing personal finances can become difficult when income, expenses, savings, and investments are tracked separately. Individuals may know how much they earn and spend but lack a clear overview of how their money is distributed across different financial priorities.
 
-Managing money involves more than tracking income and expenses. It also requires a clear plan for allocating income and monitoring financial progress.
+Vaulto addresses this problem by bringing financial allocation, transaction tracking, and monthly analytics together in a single application. Its goal is to make everyday financial management more structured, transparent, and accessible.
 
-Vaulto aims to simplify this process by helping users:
+## Core Functionality
 
-- Divide their monthly income into predefined financial categories.
-- Customize category names and allocation percentages.
-- Record income and financial transactions.
-- Monitor actual contributions and spending against allocated targets.
-- Review monthly financial activity through analytics.
+Vaulto provides individual user authentication and a personalized financial dashboard that displays monthly allocations, recorded transactions, and category-wise progress. The application uses four predefined financial categories: Expense, Savings, Investments, and Emergency Fund. Users can customize the display names and allocation percentages of these categories according to their financial priorities, while the total allocation must always equal 100%.
 
-## Key Features
+Users can record and remove financial entries, monitor expenses and contributions against their allocated targets, and review their financial activity through the Analytics section. The dashboard uses visual progress indicators to communicate category-wise usage, while monthly analytics provide graphical representations of financial activity, including expenses, savings, investments, income, and Loan/EMI contributions.
 
-- **User Authentication:** Individual accounts with registration, login, and logout.
-- **Financial Dashboard:** View monthly financial allocations, recorded amounts, and category-wise progress.
-- **Four Default Categories:** Manage Expense, Savings, Investments, and Emergency Fund.
-- **Customizable Category Names:** Rename the four default categories according to personal requirements.
-- **Flexible Allocation:** Customize the percentage assigned to each category, with the total required to equal exactly 100%.
-- **Transaction Management:** Add and remove financial entries.
-- **Expense Tracking:** Monitor spending against the allocated expense target.
-- **Savings Tracking:** Track savings contributions.
-- **Investment Tracking:** Record investment contributions. Vaulto does not calculate market returns or investment profits and losses.
-- **Monthly Analytics:** Visualize financial activity, including category-wise transactions, income, and loan/EMI contributions.
-- **Persistent Data:** Store financial records and user settings in a database.
+Investment tracking is limited to recording contributions. Vaulto does not calculate market returns, investment valuations, or profits and losses.
 
-## How Vaulto Works
+## Financial Allocation Methodology
 
-1. Register or log in to your account.
-2. Enter your financial information.
-3. Customize the names of the four predefined categories if required.
-4. Assign an allocation percentage to each category.
-5. Ensure that the combined allocation equals 100%.
-6. Add or remove financial entries as needed.
-7. Monitor category-wise progress on the dashboard.
-8. Review financial activity through the Analytics section.
+Vaulto calculates the target amount for each category using the user's monthly income and selected allocation percentage. The category target is calculated by multiplying monthly income by the category's allocation percentage and dividing the result by 100.
 
+Category progress is determined by comparing the actual recorded amount with its allocated target. This provides users with a straightforward way to understand how much of their planned allocation has been used or contributed.
 
-
-**Calculation Logic**
-
-Category Target = Monthly Income × Allocation Percentage / 100
-
-Usage Percentage = (Actual Amount / Category Target) × 100
-
-For example, if the allocated target is ₹2,500 and the actual amount recorded is ₹1,350:
-
-Usage Percentage = (1,350 / 2,500) × 100 = 54%
-
-The dashboard uses progress indicators to help users understand how much of their allocated target has been used or contributed.
+For example, with a monthly income of ₹20,000 and an investment allocation of 25%, the investment target would be ₹5,000. If the user records an investment contribution of ₹2,500, the dashboard displays 50% progress towards that target.
 
 ## Technology Stack
 
-**Frontend**
+The frontend is developed using React.js, JavaScript, HTML5, and CSS3, with Vite serving as the development and build tool. Recharts is used for financial data visualization, while Lucide React provides interface icons.
 
-- React.js
-- JavaScript
-- HTML5
-- CSS3
-- Vite
-- Recharts
-- Lucide React
+The backend is developed using Python and FastAPI, providing REST API endpoints and handling application logic and authentication. SQLAlchemy is used for database integration, while JWT-based authentication and password hashing support account security.
 
-**Backend**
+PostgreSQL serves as the primary database, hosted on Neon. The frontend is deployed through Vercel, and the backend is deployed through Render. Git and GitHub are used for version control and source code management.
 
-- Python
-- FastAPI
-- SQLAlchemy
-- JWT Authentication
-- Password Hashing
+## System Architecture
 
-**Database and Deployment**
+Vaulto follows a client-server architecture. The React frontend communicates with the FastAPI backend through REST APIs. The backend processes application requests, handles authentication, and interacts with the PostgreSQL database through SQLAlchemy. User accounts, financial transactions, and application settings are persisted in the database.
 
-- PostgreSQL
-- Neon
-- Vercel
-- Render
+The frontend and backend are deployed independently, allowing the application interface, server-side logic, and database to operate as separate components of the overall system.
 
+## Deployment
 
-
-## Application Architecture
-
-Vaulto follows a full-stack client-server architecture.
-
-- The React frontend provides the user interface and handles user interactions.
-- The FastAPI backend manages application logic, authentication, and API requests.
-- SQLAlchemy manages communication between the backend and database.
-- PostgreSQL stores user accounts, financial records, and application settings.
-- Vercel hosts the frontend.
-- Render hosts the backend.
-
-## Project Objective
-
-The objective of Vaulto is to make personal finance management more organized, understandable, and accessible.
-
-Instead of focusing on complicated financial concepts, Vaulto emphasizes a practical approach: allocate your income, record your financial activities, and understand where your money goes.
+Vaulto is deployed as an online web application. The frontend is hosted on Vercel, the backend API is hosted on Render, and the PostgreSQL database is managed through Neon. This deployment setup makes the application accessible through a public web address without requiring users to run the project locally.
 
 ## Future Scope
 
-Potential improvements include:
+Future development may include more detailed financial analytics, downloadable financial reports, enhanced budgeting insights, improved personalization, and AI-assisted financial insights. These additions could further expand Vaulto into a more comprehensive personal finance management platform.
 
-- More detailed financial analytics.
-- Enhanced monthly reports and visualizations.
-- Financial data export.
-- Improved budgeting insights.
-- Personalized financial recommendations.
-- Dynamic Financial Categories
+## Project Information
+
+Vaulto is an independently developed full-stack web development project that brings together frontend engineering, backend development, database integration, authentication, API communication, and cloud deployment. It represents practical experience in designing and developing an end-to-end web application.
+
+**Project Name:** Vaulto
+
+**Tagline:** Money, in Balance.
+
+**Project Category:** Full-Stack Web Development / Personal Finance Management
+
+**Development Status:** Publicly Deployed
+
+**Live Application:** https://vaulto-kohl.vercel.app/
+
+**Backend API Documentation:** https://vaulto-oavo.onrender.com/docs
+
+**Repository:** https://github.com/VoiceRemembrance/vaulto
+
+*Vaulto is a financial tracking and planning tool, not a source of professional financial advice. Investment entries represent recorded contributions and do not reflect market returns.*
+
+---
+
+**Give every amount a purpose. Track every movement. Understand your money.**
