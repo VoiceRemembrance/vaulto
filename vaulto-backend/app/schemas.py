@@ -1,21 +1,62 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
-class CategoryConfig(BaseModel):
-    id: str = Field(min_length=1, max_length=40)
+CategoryType = Literal["expense", "contribution"]
+
+
+class CategoryCreate(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     percentage: Decimal = Field(ge=0, le=100, max_digits=5, decimal_places=2)
+    category_type: CategoryType = "expense"
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Category name cannot be empty")
+        return value
+
+class CategoryUpdate(CategoryCreate):
+    pass
+
+
+class CategoryConfigurationItem(CategoryCreate):
+    id: int | None = None
     active: bool = True
 
-    @field_validator("id", "name")
-    @classmethod
-    def normalize_text(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("Category identifiers and names cannot be empty")
-        return normalized
+
+class CategoryConfiguration(BaseModel):
+    categories: list[CategoryConfigurationItem] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_configuration(self):
+        active = [category for category in self.categories if category.active]
+        if not active:
+            raise ValueError("At least one category must remain active")
+        if sum((item.percentage for item in active), Decimal("0")) != Decimal("100"):
+            raise ValueError("Active allocation percentages must total exactly 100%")
+        names = [item.name.casefold() for item in self.categories]
+        if len(names) != len(set(names)):
+            raise ValueError("Category names must be unique, ignoring case")
+        ids = [category.id for category in self.categories if category.id is not None]
+        if len(ids) != len(set(ids)):
+            raise ValueError("A category may only appear once in the configuration")
+        return self
+
+
+class CategoryOut(BaseModel):
+    id: int
+    name: str
+    percentage: Decimal
+    category_type: str
+    active: bool
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
 
 
 class UserOut(BaseModel):
@@ -44,19 +85,20 @@ class LoginIn(BaseModel):
 
 
 class TransactionCreate(BaseModel):
-    category: str
+    category_id: int | None = None
+    category: str | None = Field(default=None, min_length=1, max_length=40)
     direction: str = "add"
     amount: float = Field(gt=0, le=1000000000)
     description: str = Field(default="", max_length=200)
     transaction_date: date | None = None
 
-    @field_validator("category")
-    @classmethod
-    def validate_category(cls, value):
-        allowed = {"income", "expense", "savings", "investment", "emergency"}
-        if value not in allowed:
-            raise ValueError(f"category must be one of: {', '.join(sorted(allowed))}")
-        return value
+    @model_validator(mode="after")
+    def validate_category_reference(self):
+        if self.category_id is not None and self.category is not None:
+            raise ValueError("Provide either category_id or category, not both")
+        if self.category_id is None and self.category is None:
+            raise ValueError("A category_id is required for category transactions")
+        return self
 
     @field_validator("direction")
     @classmethod
@@ -69,6 +111,9 @@ class TransactionCreate(BaseModel):
 class TransactionOut(BaseModel):
     id: int
     category: str
+    category_id: int | None = None
+    category_name: str
+    category_type: str
     direction: str
     amount: float
     description: str
@@ -79,70 +124,8 @@ class TransactionOut(BaseModel):
 class MonthlySummary(BaseModel):
     month: str
     income: float
-    expense: float
-    savings: float
-    investment: float
-    emergency: float
-    allocation_targets: dict[str, float]
-
-
-class MonthlyAnalytics(BaseModel):
-    months: list[dict[str, float | str]]
-
-
-class UserSettingsUpdate(BaseModel):
-    expense_percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=5, decimal_places=2)
-    savings_percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=5, decimal_places=2)
-    investment_percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=5, decimal_places=2)
-    emergency_percentage: Decimal | None = Field(default=None, ge=0, le=100, max_digits=5, decimal_places=2)
-    expense_name: str | None = Field(default=None, min_length=1, max_length=40)
-    savings_name: str | None = Field(default=None, min_length=1, max_length=40)
-    investment_name: str | None = Field(default=None, min_length=1, max_length=40)
-    emergency_name: str | None = Field(default=None, min_length=1, max_length=40)
-    categories: list[CategoryConfig] | None = None
-
-    model_config = ConfigDict(extra="forbid")
-
-    @field_validator("expense_name", "savings_name", "investment_name", "emergency_name")
-    @classmethod
-    def strip_category_name(cls, value: str | None) -> str | None:
-        if value is None:
-            return value
-        value = value.strip()
-        if not value:
-            raise ValueError("Category names cannot be empty")
-        return value
-
-    @model_validator(mode="after")
-    def validate_percentage_total(self):
-        if self.categories is not None:
-            categories = [item for item in self.categories if item.active]
-            total = sum((item.percentage for item in categories), Decimal("0"))
-            if total != Decimal("100"):
-                raise ValueError(f"Allocation percentages must total exactly 100% (received {total}%)")
-            return self
-        values = [
-            self.expense_percentage,
-            self.savings_percentage,
-            self.investment_percentage,
-            self.emergency_percentage,
-        ]
-        if any(value is None for value in values):
-            return self
-        total = sum(values, Decimal("0"))
-        if total != Decimal("100"):
-            raise ValueError(f"Allocation percentages must total exactly 100% (received {total}%)")
-        return self
-
-
-class UserSettingsOut(BaseModel):
-    expense_percentage: Decimal | None = None
-    savings_percentage: Decimal | None = None
-    investment_percentage: Decimal | None = None
-    emergency_percentage: Decimal | None = None
-    expense_name: str | None = None
-    savings_name: str | None = None
-    investment_name: str | None = None
-    emergency_name: str | None = None
-    categories: list[CategoryConfig] = Field(default_factory=list)
-    model_config = ConfigDict(from_attributes=True, extra="forbid")
+    categories: list[dict]
+    historical_configuration_available: bool
+    expense_variance: float | None = None
+    expense_status: str | None = None
+    allocation_targets: dict[str, float] = Field(default_factory=dict)
