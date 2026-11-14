@@ -12,10 +12,10 @@ export const DEFAULT_SETTINGS = {
 };
 
 const CATEGORY_DEFINITIONS = [
-  { id: 'expense', tint: 'peach', color: '#f28b70', Icon: ShoppingBag },
-  { id: 'savings', tint: 'mint', color: '#56b9a6', Icon: PiggyBank },
-  { id: 'investment', tint: 'lavender', color: '#8b82e8', Icon: TrendingUp },
-  { id: 'emergency', tint: 'gold', color: '#d9a743', Icon: ShieldCheck },
+  { id: 'expense', tint: 'peach', color: '#e5a083', Icon: ShoppingBag },
+  { id: 'savings', tint: 'mint', color: '#65c9a6', Icon: PiggyBank },
+  { id: 'investment', tint: 'lavender', color: '#a99af2', Icon: TrendingUp },
+  { id: 'emergency', tint: 'gold', color: '#e7bd69', Icon: ShieldCheck },
 ];
 
 export function getBuckets(settings) {
