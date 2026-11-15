@@ -1,0 +1,364 @@
+/* Shared Green Piggy Bank Finance tokens and visual layer. */
+:root {
+  color-scheme: dark;
+  font-family: "DM Sans", sans-serif;
+  --forest-950: #03150B;
+  --forest-900: #052E16;
+  --forest-800: #0B3D1E;
+  --emerald-800: #14532D;
+  --emerald-700: #166534;
+  --green-600: #1F8A4C;
+  --green-500: #22A55A;
+  --green-400: #2ECC71;
+  --teal-700: #0E7C66;
+  --teal-600: #0F766E;
+  --mint-400: #98F5C0;
+  --mint-300: #BBF7D0;
+  --mint-200: #DCFCE7;
+  --spark-lime: #B6FF5C;
+  --spark-pale: #E4FFB0;
+
+  --bg: var(--forest-950);
+  --surface: rgba(5, 46, 22, .84);
+  --card: rgba(11, 61, 30, .78);
+  --elevated: rgba(20, 83, 45, .84);
+  --green: var(--green-500);
+  --mint: var(--mint-300);
+  --text: var(--mint-200);
+  --text-soft: #B9D8C5;
+  --muted: #A5C5B2;
+  --line: rgba(187, 247, 208, .13);
+  --line-strong: rgba(187, 247, 208, .23);
+  --shadow-card: 0 18px 48px rgba(0, 10, 4, .28), inset 0 1px 0 rgba(220, 252, 231, .045);
+  --shadow-float: 0 26px 64px rgba(0, 10, 4, .38), 0 0 34px rgba(46, 204, 113, .09), inset 0 1px 0 rgba(220, 252, 231, .07);
+  --radius-sm: 10px;
+  --radius-md: 19px;
+  --radius-lg: 27px;
+  --ease: 180ms ease;
+}
+
+html { background: var(--forest-950); }
+body {
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at 50% 10%, rgba(31, 138, 76, .2), transparent 42rem),
+    linear-gradient(150deg, var(--forest-950), var(--forest-900) 52%, var(--forest-950));
+}
+
+#root { position: relative; min-height: 100vh; isolation: isolate; }
+
+/* This single fixed layer remains mounted as the app changes dashboard views. */
+.animated-background {
+  --scroll-progress: 0;
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 49%, rgba(20, 83, 45, .38), transparent 38rem),
+    radial-gradient(ellipse at 14% 15%, rgba(14, 124, 102, .22), transparent 32rem),
+    radial-gradient(ellipse at 88% 77%, rgba(31, 138, 76, .2), transparent 34rem),
+    linear-gradient(145deg, #03150B 0%, #052E16 48%, #03150B 100%);
+}
+.background-aurora,
+.background-stars,
+.background-noise,
+.finance-doodles,
+.finance-symbols,
+.floating-coins,
+.money-bills,
+.piggy-scroll,
+.background-sparkles { position: absolute; inset: 0; }
+.background-aurora {
+  inset: -32%;
+  background:
+    radial-gradient(ellipse at 38% 45%, rgba(46, 204, 113, .14), transparent 24%),
+    radial-gradient(ellipse at 66% 53%, rgba(15, 118, 110, .17), transparent 26%),
+    radial-gradient(ellipse at 50% 72%, rgba(31, 138, 76, .12), transparent 28%);
+  filter: blur(34px);
+  animation: aurora-breathe 18s ease-in-out infinite alternate;
+}
+.background-stars {
+  opacity: .48;
+  background-image:
+    radial-gradient(circle, rgba(228, 255, 176, .82) 0 1px, transparent 1.8px),
+    radial-gradient(circle, rgba(187, 247, 208, .62) 0 .8px, transparent 1.7px),
+    radial-gradient(circle, rgba(152, 245, 192, .4) 0 .7px, transparent 1.6px);
+  background-size: 139px 163px, 211px 197px, 83px 97px;
+  background-position: 17px 21px, 63px 47px, 32px 13px;
+  animation: star-drift 22s ease-in-out infinite alternate;
+}
+.background-noise {
+  opacity: .12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.piggy-scroll {
+  inset: 50% auto auto 50%;
+  width: min(52vw, 650px);
+  transform: translate3d(-50%, -50%, 0) scale(1);
+  opacity: .8;
+  filter: drop-shadow(0 26px 52px rgba(0, 12, 5, .24));
+}
+.piggy-illustration { display: block; width: 100%; height: auto; overflow: visible; animation: piggy-float 8s ease-in-out infinite; }
+.piggy-body { fill: url(#piggy-glass); stroke: rgba(187, 247, 208, .82); stroke-width: 2.4; filter: url(#piggy-soft-glow); }
+.piggy-highlight,.piggy-tail { fill: none; stroke: rgba(220, 252, 231, .56); stroke-width: 2; stroke-linecap: round; }
+.piggy-tail { stroke: rgba(152, 245, 192, .64); stroke-width: 5; }
+.piggy-slot-glow { fill: none; stroke: var(--spark-lime); stroke-width: 12; stroke-linecap: round; opacity: .55; filter: url(#piggy-soft-glow); animation: slot-glimmer 2.8s ease-in-out infinite; }
+.piggy-slot { fill: none; stroke: var(--spark-pale); stroke-width: 4; stroke-linecap: round; }
+.piggy-eye { fill: var(--mint-200); filter: drop-shadow(0 0 5px rgba(228, 255, 176, .7)); }
+.piggy-nose { fill: rgba(3, 21, 11, .68); stroke: rgba(220, 252, 231, .52); stroke-width: 1.3; }
+.piggy-fill { transform: translateY(190px); transform-box: fill-box; transform-origin: center; }
+.piggy-star { fill: var(--spark-pale); filter: drop-shadow(0 0 5px var(--spark-lime)); animation: inner-twinkle 2.4s ease-in-out infinite alternate; }
+.piggy-star:nth-of-type(2n) { animation-delay: -1.2s; }
+.piggy-coin { fill: url(#piggy-fill); stroke: var(--spark-pale); stroke-width: 2; filter: drop-shadow(0 0 10px rgba(182, 255, 92, .8)); }
+.piggy-coin-mark { fill: none; stroke: var(--forest-800); stroke-width: 1.8; stroke-linecap: round; }
+
+.money-bill-depth { position: absolute; left: var(--bill-x); top: var(--bill-y); width: var(--bill-size); opacity: .62; filter: drop-shadow(0 8px 16px rgba(0, 8, 3, .25)); }
+.money-bill { display: block; width: 100%; overflow: visible; fill: rgba(31, 138, 76, .22); stroke: rgba(187, 247, 208, .68); stroke-width: 1.4; animation: bill-hover var(--bill-speed) ease-in-out var(--bill-delay) infinite alternate; }
+.money-bill-inset { fill: rgba(22, 101, 52, .18); stroke: rgba(152, 245, 192, .38); stroke-dasharray: 2 3; }
+.money-bill circle { fill: rgba(182, 255, 92, .16); stroke: rgba(228, 255, 176, .68); }
+.money-bill path { fill: none; stroke: rgba(220, 252, 231, .66); stroke-linecap: round; }
+
+.finance-doodles { width: 100%; height: 100%; opacity: .21; }
+.doodle-chart { fill: none; stroke: rgba(152, 245, 192, .62); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.doodle-line { stroke-dasharray: 480; stroke-dashoffset: 480; animation: draw-chart 11s ease-in-out infinite; }
+.doodle-arrow { stroke: var(--spark-lime); stroke-width: 2.5; }
+.doodle-bars { stroke: rgba(46, 204, 113, .66); stroke-width: 13; stroke-linecap: round; }
+.doodle-candle { stroke: rgba(187, 247, 208, .62); stroke-width: 2; }
+.doodle-candle path { fill: rgba(31, 138, 76, .28); }
+.doodle-coins { fill: none; stroke: rgba(228, 255, 176, .48); stroke-width: 2; }
+.finance-symbols span { position: absolute; color: rgba(187, 247, 208, .21); font-family: "Manrope", sans-serif; font-weight: 800; text-shadow: 0 0 18px rgba(46, 204, 113, .14); animation: symbol-float 9s ease-in-out infinite alternate; }
+.finance-symbols span:nth-child(even) { animation-delay: -4s; }
+.floating-coins i { position: absolute; width: 28px; aspect-ratio: 1; border: 1px solid rgba(228, 255, 176, .46); border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(228, 255, 176, .36), rgba(31, 138, 76, .16) 52%, rgba(5, 46, 22, .45)); box-shadow: inset 0 0 0 4px rgba(152, 245, 192, .07), 0 0 18px rgba(182, 255, 92, .11); opacity: .42; animation: coin-drift 10s ease-in-out infinite alternate; }
+.floating-coins i:nth-child(1) { top: 62%; left: 25%; }
+.floating-coins i:nth-child(2) { top: 27%; right: 25%; width: 19px; animation-delay: -4s; }
+.floating-coins i:nth-child(3) { top: 78%; right: 13%; width: 35px; animation-delay: -7s; }
+.background-sparkles {
+  opacity: .45;
+  background-image:
+    radial-gradient(circle, var(--spark-pale) 0 1px, transparent 2px),
+    radial-gradient(circle, var(--spark-lime) 0 .8px, transparent 1.8px);
+  background-size: 173px 191px, 257px 229px;
+  background-position: 57px 36px, 123px 107px;
+  animation: sparkle-pulse 3.8s ease-in-out infinite alternate;
+}
+
+/* Scroll timeline is the native path. The component supplies a throttled rAF fallback. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .animated-background[data-scroll-driver="timeline"] .piggy-scroll {
+      animation: piggy-scroll 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0% 100%;
+    }
+    .animated-background[data-scroll-driver="timeline"] .piggy-fill {
+      animation: piggy-fill 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0% 100%;
+    }
+    .animated-background[data-scroll-driver="timeline"] .money-bill-depth {
+      animation: bill-scroll 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0% 100%;
+    }
+    .animated-background[data-scroll-driver="timeline"] .doodle-line {
+      animation: graph-scroll 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0% 100%;
+    }
+    .animated-background[data-scroll-driver="timeline"] .doodle-arrow {
+      animation: arrow-scroll 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0% 100%;
+    }
+  }
+}
+.animated-background[data-scroll-driver="fallback"] .piggy-scroll {
+  transform: translate3d(-50%, -50%, 0) scale(calc(1 + var(--scroll-progress) * .07)) rotate(calc(var(--scroll-progress) * 1.5deg));
+}
+.animated-background[data-scroll-driver="fallback"] .piggy-fill {
+  transform: translateY(calc(190px - var(--scroll-progress) * 175px));
+}
+.animated-background[data-scroll-driver="fallback"] .money-bill-depth {
+  transform: translate3d(0, calc(var(--scroll-progress) * -20px), 0);
+}
+.animated-background[data-scroll-driver="fallback"] .doodle-line { stroke-dashoffset: calc(480 - var(--scroll-progress) * 480); }
+.animated-background[data-scroll-driver="fallback"] .doodle-arrow { opacity: calc(.22 + var(--scroll-progress) * .7); }
+
+@keyframes piggy-scroll {
+  0% { transform: translate3d(-50%, -50%, 0) scale(.96) rotate(0); opacity: .72; }
+  25% { transform: translate3d(-50%, -50%, 0) scale(1.025) rotate(0); opacity: .82; }
+  52% { transform: translate3d(-50%, -50%, 0) scale(1.075) rotate(-1.5deg); opacity: .96; }
+  78% { transform: translate3d(-50%, -50%, 0) scale(1.1) rotate(1.2deg); opacity: 1; }
+  100% { transform: translate3d(-50%, -50%, 0) scale(1.045) rotate(0); opacity: .82; }
+}
+@keyframes piggy-fill {
+  0%, 48% { transform: translateY(190px); }
+  76% { transform: translateY(8px); }
+  100% { transform: translateY(20px); }
+}
+@keyframes bill-scroll {
+  0%, 18% { transform: translate3d(0, 0, 0) scale(1); opacity: .55; }
+  30% { transform: translate3d(var(--bill-drift), -24px, 0) scale(.84); opacity: .86; }
+  48% { transform: translate3d(var(--bill-drift), 12px, 0) scale(.66); opacity: .18; }
+  68% { transform: translate3d(0, -8px, 0) scale(.9); opacity: .5; }
+  100% { transform: translate3d(0, 18px, 0) scale(1.02); opacity: .62; }
+}
+@keyframes graph-scroll {
+  0%, 40% { stroke-dashoffset: 480; }
+  73%, 100% { stroke-dashoffset: 0; }
+}
+@keyframes arrow-scroll {
+  0%, 40% { opacity: .18; transform: translateY(8px); }
+  75%, 100% { opacity: .85; transform: translateY(-3px); }
+}
+@keyframes piggy-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes bill-hover { 0% { transform: translate3d(0, 0, 0) rotate(-8deg); } 100% { transform: translate3d(8px, -13px, 0) rotate(7deg); } }
+@keyframes draw-chart { 0%, 15% { stroke-dashoffset: 480; } 50%, 100% { stroke-dashoffset: 0; } }
+@keyframes symbol-float { 0% { transform: translate3d(0, 4px, 0); opacity: .5; } 100% { transform: translate3d(0, -9px, 0); opacity: 1; } }
+@keyframes coin-drift { 0% { transform: translate3d(0, 6px, 0) rotate(-10deg); } 100% { transform: translate3d(10px, -10px, 0) rotate(8deg); } }
+@keyframes slot-glimmer { 0%, 100% { opacity: .42; } 50% { opacity: .9; } }
+@keyframes inner-twinkle { from { opacity: .32; } to { opacity: 1; } }
+@keyframes sparkle-pulse { from { opacity: .22; } to { opacity: .58; } }
+@keyframes aurora-breathe { from { transform: translate3d(-1%, 0, 0) scale(.98); opacity: .7; } to { transform: translate3d(1%, -1%, 0) scale(1.03); opacity: 1; } }
+@keyframes star-drift { from { background-position: 17px 21px, 63px 47px, 32px 13px; } to { background-position: 25px 8px, 54px 57px, 40px 4px; } }
+
+/* Unified glass surfaces keep every existing view legible against the art. */
+.app { isolation: auto; }
+.app::before { display: none; }
+.auth-visual {
+  border-right-color: var(--line);
+  background: linear-gradient(145deg, rgba(5, 46, 22, .46), rgba(3, 21, 11, .2));
+}
+.money-universe { opacity: .28; }
+.auth-panel { background: linear-gradient(145deg, rgba(3, 21, 11, .72), rgba(5, 46, 22, .79)); }
+.sidebar {
+  border-right-color: var(--line);
+  background: linear-gradient(180deg, rgba(3, 21, 11, .91), rgba(5, 46, 22, .88));
+  box-shadow: 14px 0 44px rgba(0, 10, 4, .22);
+  backdrop-filter: blur(24px);
+}
+.topbar { border-bottom-color: var(--line); background: rgba(3, 21, 11, .77); }
+.bucket,
+.entries,
+.average,
+.chart-card,
+.settings-card,
+.preview,
+.modal,
+.month-pill,
+.top-right > span,
+.side-tip,
+.analytics-note {
+  border-color: var(--line);
+  background: linear-gradient(145deg, rgba(11, 61, 30, .82), rgba(5, 46, 22, .82));
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+}
+.bucket { --tone: var(--green-400); --tint: rgba(46, 204, 113, .14); }
+.bucket.peach { --tone: var(--teal-600); --tint: rgba(15, 118, 110, .2); }
+.bucket.mint { --tone: var(--green-400); --tint: rgba(46, 204, 113, .14); }
+.bucket.lavender { --tone: var(--mint-400); --tint: rgba(152, 245, 192, .14); }
+.bucket.gold { --tone: var(--spark-lime); --tint: rgba(182, 255, 92, .12); }
+.bucket-icon.peach, .average-icon.peach, .entry-icon.peach { --tone: var(--teal-600); --tint: rgba(15, 118, 110, .2); }
+.bucket-icon.mint, .average-icon.mint, .entry-icon.mint { --tone: var(--green-400); --tint: rgba(46, 204, 113, .14); }
+.bucket-icon.lavender, .average-icon.lavender, .entry-icon.lavender { --tone: var(--mint-400); --tint: rgba(152, 245, 192, .14); }
+.bucket-icon.gold, .average-icon.gold, .entry-icon.gold { --tone: var(--spark-lime); --tint: rgba(182, 255, 92, .12); }
+.income-card {
+  border-color: rgba(152, 245, 192, .25);
+  background: radial-gradient(ellipse at 74% 18%, rgba(46, 204, 113, .19), transparent 24rem), linear-gradient(112deg, rgba(11, 61, 30, .94), rgba(5, 46, 22, .93));
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(18px);
+}
+.modal { background: linear-gradient(145deg, rgba(11, 61, 30, .97), rgba(3, 21, 11, .97)); }
+.primary { border-color: rgba(187, 247, 208, .3); background: linear-gradient(135deg, var(--green-500), var(--emerald-800)); }
+.primary:hover:not(:disabled) { box-shadow: 0 14px 34px rgba(46, 204, 113, .3); }
+.nav.active { border-color: rgba(152, 245, 192, .2); background: linear-gradient(100deg, rgba(34, 165, 90, .22), rgba(15, 118, 110, .1)); color: var(--mint-300); }
+.nav.active::before { background: var(--spark-lime); box-shadow: 0 0 12px rgba(182, 255, 92, .7); }
+.brand-icon { border-color: rgba(152, 245, 192, .25); color: var(--mint-300); }
+.new { background: rgba(152, 245, 192, .14); color: var(--mint-300); }
+.split i:nth-child(1) { background: var(--teal-700); }
+.split i:nth-child(2) { background: var(--green-600); }
+.split i:nth-child(3) { background: var(--green-400); }
+.split i:nth-child(4) { background: var(--mint-400); }
+.entry > strong.removed, .entry > button:hover { color: var(--mint-400); }
+.entry > button:hover { background: rgba(152, 245, 192, .1); }
+.error { color: var(--mint-300); }
+.settings-total, .settings-total.invalid { border-color: rgba(152, 245, 192, .18); background: rgba(15, 118, 110, .14); color: var(--mint-300); }
+.settings-total.valid { border-color: rgba(152, 245, 192, .24); background: rgba(34, 165, 90, .16); color: var(--mint-300); }
+.settings-field input, .auth-inner input, .modal input, .modal textarea {
+  border-color: var(--line-strong);
+  background: rgba(3, 21, 11, .58);
+}
+.settings-field input:focus, .auth-inner input:focus, .modal input:focus, .modal textarea:focus {
+  border-color: rgba(152, 245, 192, .65);
+  background: rgba(3, 21, 11, .82);
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, .12);
+}
+.bucket:hover, .average:hover { border-color: rgba(187, 247, 208, .28); }
+.bucket-buttons button:first-child { border-color: rgba(152, 245, 192, .2); background: rgba(34, 165, 90, .13); color: var(--mint-300); }
+.bucket-buttons button:hover, .cancel:hover:not(:disabled), .guest:hover:not(:disabled) { border-color: rgba(152, 245, 192, .4); }
+.bucket-buttons button:hover { background: rgba(152, 245, 192, .1); color: var(--mint-200); }
+.chart-card { border-radius: 22px; }
+.settings-card { border-radius: 22px; }
+.chart-head small, .section-title > div > small { color: var(--mint-400); }
+.chart-head h2, .section-title h2 { color: var(--mint-200); }
+.welcome h1 em, .hero-copy h1 em { color: var(--mint-300); }
+.eyebrow, .dark { color: var(--mint-400); }
+.ring-val { filter: drop-shadow(0 0 6px rgba(152, 245, 192, .35)); }
+.modal-bg { background: rgba(3, 21, 11, .78); }
+.scrim.show { background: rgba(3, 21, 11, .72); }
+
+/* Keep supporting copy legible on the deepest green surfaces. */
+.nav-label, .nav, .profile small, .version, .top-right > span, .crumb,
+.welcome p, .bucket-numbers small, .bucket-foot, .entry-desc small,
+.entry-count, .chart-tag, .average small, .average em, .chart-head p,
+.settings-description, .settings-heading small, .settings-field > span small,
+.fine, .or, .muted, .disclaimer, .section-title p, .income-label,
+.income-card p, .income-stats small, .modal-head small, .modal label small,
+.analytics-note p { color: var(--text-soft); }
+.primary, .cancel, .guest, .bucket-buttons button, .month-pill, .top-right > span,
+.settings-field input, .auth-inner input, .modal input, .modal textarea,
+.income-number button, .income-edit input { color: var(--text); }
+.or { opacity: .9; }
+
+body.is-hidden .animated-background *,
+body.is-hidden .animated-background *::before,
+body.is-hidden .animated-background *::after { animation-play-state: paused !important; }
+
+@media (max-width: 760px) {
+  .piggy-scroll { width: min(84vw, 460px); opacity: .72; }
+  .money-bill-depth:nth-child(n + 8) { display: none; }
+  .finance-symbols span:nth-child(n + 5), .floating-coins i:nth-child(n + 3) { display: none; }
+  .finance-doodles { opacity: .14; }
+  .background-stars { background-image: radial-gradient(circle, rgba(228, 255, 176, .72) 0 1px, transparent 1.8px), radial-gradient(circle, rgba(187, 247, 208, .5) 0 .8px, transparent 1.7px); }
+  .money-universe { opacity: .16; }
+  .auth-panel { background: rgba(3, 21, 11, .79); }
+}
+@media (max-width: 430px) {
+  .piggy-scroll { width: 92vw; opacity: .64; }
+  .money-bill-depth:nth-child(n + 6) { display: none; }
+  .background-aurora { filter: blur(24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-background .background-aurora,
+  .animated-background .background-stars,
+  .animated-background .piggy-illustration,
+  .animated-background .piggy-star,
+  .animated-background .piggy-slot-glow,
+  .animated-background .money-bill,
+  .animated-background .doodle-line,
+  .animated-background .finance-symbols span,
+  .animated-background .floating-coins i,
+  .animated-background .background-sparkles { animation: none !important; }
+  .animated-background .piggy-scroll { transform: translate3d(-50%, -50%, 0) scale(1); opacity: .76; }
+  .animated-background .piggy-fill { transform: translateY(92px); }
+  .animated-background .money-bill-depth { transform: none; opacity: .48; }
+  .animated-background .doodle-line { stroke-dashoffset: 0; }
+  .animated-background .doodle-arrow { opacity: .55; }
+}
