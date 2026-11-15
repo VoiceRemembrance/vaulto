@@ -79,6 +79,19 @@ function Auth({ done }) {
   return (
     <div className="auth">
       <section className="auth-visual">
+        <div className="money-universe" aria-hidden="true">
+          <div className="universe-stars"/>
+          <div className="universe-aurora aurora-one"/><div className="universe-aurora aurora-two"/>
+          <div className="universe-floor"/>
+          <div className="universe-bubble bubble-one"/><div className="universe-bubble bubble-two"/><div className="universe-bubble bubble-three"/>
+          <div className="universe-note note-one">₹</div><div className="universe-note note-two">₹</div>
+          <div className="universe-coin">₹</div>
+          <img className="glass-pig" src="/images/vaulto-money-universe.png" alt="Emerald glass piggy bank in a glowing green money universe" />
+          <div className="orbit-orb orb-expense" aria-label="Expense"><ShoppingBag size={15}/></div>
+          <div className="orbit-orb orb-savings" aria-label="Savings"><PiggyBank size={15}/></div>
+          <div className="orbit-orb orb-invest" aria-label="Investments"><TrendingUp size={15}/></div>
+          <div className="orbit-orb orb-emergency" aria-label="Emergency fund"><ShieldCheck size={15}/></div>
+        </div>
         <Brand/>
         <div className="hero-copy">
           <span className="eyebrow">YOUR MONEY, WITH A PLAN</span>
