@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Numeric, String, Text, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Numeric, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
 
@@ -61,7 +61,6 @@ class Transaction(Base):
     direction: Mapped[str] = mapped_column(String(10))
     amount: Mapped[float] = mapped_column(Float)
     description: Mapped[str] = mapped_column(String(200), default="")
-    note: Mapped[str | None] = mapped_column(Text, nullable=True)
     transaction_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     user: Mapped[User] = relationship(back_populates="transactions")
