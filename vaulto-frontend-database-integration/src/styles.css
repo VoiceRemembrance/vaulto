@@ -667,7 +667,7 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   background: rgba(230, 46, 45, .18);
 }
 .income-card p { margin: 0; color: var(--text-soft); font-size: 13px; }
-.income-stats { position: relative; z-index: 1; display: flex; align-items: center; gap: 28px; padding-right: 40px; }
+.income-stats { position: relative; z-index: 1; display: flex; align-items: center; gap: 28px; margin-left: auto; padding-right: 40px; }
 .income-stats > div { display: flex; flex-direction: column; gap: 6px; }
 .income-stats small { color: var(--muted); font-size: 11.5px; }
 .income-stats b { color: var(--crimson-400); font: 800 22px "Manrope", sans-serif; }
@@ -1126,7 +1126,7 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
 @media (max-width: 480px) {
   .bucket-grid { grid-template-columns: 1fr; }
   .income-number { font-size: 28px; }
-  .income-stats { width: 100%; justify-content: space-between; gap: 12px; }
+  .income-stats { width: auto; justify-content: flex-end; gap: 12px; }
   .chart-head { flex-direction: column; }
   .modal-bg { padding: 10px; }
   .modal { padding: 20px; }
