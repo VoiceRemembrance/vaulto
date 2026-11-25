@@ -33,6 +33,7 @@ class TransactionCreate(BaseModel):
     direction: str = "add"
     amount: float = Field(gt=0, le=1000000000)
     description: str = Field(default="", max_length=200)
+    note: str | None = None
     transaction_date: date | None = None
 
     @field_validator("category")
@@ -57,6 +58,7 @@ class TransactionOut(BaseModel):
     direction: str
     amount: float
     description: str
+    note: str | None = None
     transaction_date: datetime
     model_config = ConfigDict(from_attributes=True)
 

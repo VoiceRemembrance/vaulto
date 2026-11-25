@@ -38,6 +38,7 @@ def create_transaction(
         direction=payload.direction,
         amount=payload.amount,
         description=payload.description.strip(),
+        note=payload.note.strip() if payload.note and payload.note.strip() else None,
         transaction_date=transaction_date,
     )
     db.add(transaction)
