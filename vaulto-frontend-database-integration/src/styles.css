@@ -435,18 +435,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [role="button
   box-shadow: 0 0 12px rgba(230, 46, 45, .85);
   content: "";
 }
-.new {
-  margin-left: auto;
-  padding: 3px 8px;
-  border: 1px solid rgba(239, 59, 58, .32);
-  border-radius: 999px;
-  background: rgba(230, 46, 45, .14);
-  color: #fca5a5;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
 /* Nexora Crimson-Top-Left Directional Glow Side Card (like "AI Models" card) */
 .side-tip {
   position: relative;
@@ -724,21 +712,6 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   letter-spacing: -.6px;
 }
 .section-title p, .chart-head p { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.6; }
-.recommend {
-  display: inline-flex;
-  flex-shrink: 0;
-  white-space: nowrap;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border: 1px solid rgba(239, 59, 58, .3);
-  border-radius: 999px;
-  background: rgba(230, 46, 45, .1);
-  color: #fca5a5;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
 /* Bucket Cards — Surgical Matte Carbon Cards (Nexora 4-card motif) */
 .bucket-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .bucket {

@@ -158,7 +158,7 @@ function Sidebar({ page, setPage, user, logout, open, setOpen }) {
       <Brand/>
       <div className="nav-label">WORKSPACE</div>
       <button className={page === 'overview' ? 'nav active' : 'nav'} onClick={() => navigate('overview')}><LayoutDashboard size={18}/>Overview</button>
-      <button className={page === 'analytics' ? 'nav active' : 'nav'} onClick={() => navigate('analytics')}><ChartNoAxesCombined size={18}/>Analytics <span className="new">NEW</span></button>
+      <button className={page === 'analytics' ? 'nav active' : 'nav'} onClick={() => navigate('analytics')}><ChartNoAxesCombined size={18}/>Analytics</button>
       <button className={page === 'settings' ? 'nav active' : 'nav'} onClick={() => navigate('settings')}><Settings size={18}/>Settings</button>
       <div className="side-tip spotlight-card">
         <Sparkles size={19}/>
@@ -588,7 +588,7 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
       <p>Your income is the starting point for this month's pocket money plan.</p>
     </div><div className="income-stats"><div><small>Allocated so far</small><b><AnimatedValue value={allocatedTotal} format={money}/></b></div></div><span className="rupee-art">$</span></section>
 
-    <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Click any card to inspect details or log an entry.</p></div><span className="recommend"><Sparkles size={14}/> Recommended split</span></div>
+    <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Click any card to inspect details or log an entry.</p></div></div>
     <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open} onInspect={setInspectBucket}/>)}</div>
 
     <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{monthEntries.length} entries this month</span></div>
