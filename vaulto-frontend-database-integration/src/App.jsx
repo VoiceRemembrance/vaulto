@@ -591,13 +591,17 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
     <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Click any card to inspect details or log an entry.</p></div></div>
     <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open} onInspect={setInspectBucket}/>)}</div>
 
-    <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{monthEntries.length} entries this month</span></div>
-    <div className="entries spotlight-card">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
+    <section className="activity-panel spotlight-card">
+      <div className="activity-heading">
+        <span className="activity-heading-icon"><ReceiptText size={18}/></span>
+        <div><h2>Latest Activity</h2><p>Your recent entries</p></div>
+      </div>
+      <div className="activity-list">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
       const bucket = buckets.find(item => item.id === entry.bucket);
       if (!bucket) return null;
       const Icon = bucket.Icon;
       return <div
-        className="entry"
+        className="activity-row"
         key={entry.id}
         onClick={() => setInspectEntry({ entry, bucket })}
         role="button"
@@ -609,15 +613,17 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
           }
         }}
       >
-        <span className={`entry-icon ${bucket.tint}`}><Icon size={17}/></span>
-        <div className="entry-desc">
+        <span className={`activity-icon entry-icon ${bucket.tint}`}><Icon size={17}/></span>
+        <div className="activity-name">
           <b>{entry.title}</b>
-          <small>{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
         </div>
-        <strong className={entry.direction === 'remove' ? 'removed' : ''}>{entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}</strong>
+        <span className="activity-meta">{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        <strong className="activity-amount">{money(entry.amount)}</strong>
+        <span className="activity-status">{entry.direction === 'remove' ? 'Entry removed' : 'Entry added'}</span>
         <button onClick={event => { event.stopPropagation(); del(entry.id); }} title="Delete entry" aria-label={`Delete ${entry.title}`}><Trash2 size={15}/></button>
       </div>;
     }) : <div className="empty">No entries yet. Add your first transaction to start tracking.</div>}</div>
+    </section>
     <p className="disclaimer"><ShieldCheck size={14}/> Planning guideline, not financial advice. {buckets.find(bucket => bucket.id === 'investment')?.name} values show contributions only — not market returns.</p>
 
     {inspectBucket && (
