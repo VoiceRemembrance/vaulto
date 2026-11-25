@@ -899,6 +899,15 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.activity-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 .activity-meta {
   grid-area: meta;
   min-width: 0;

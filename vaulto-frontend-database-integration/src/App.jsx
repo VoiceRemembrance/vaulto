@@ -333,7 +333,7 @@ function EntryModal({ bucket, mode, close, save }) {
       <form onSubmit={event => {
         event.preventDefault();
         if (!title.trim() || Number(amount) <= 0) { setError('Enter a description and an amount greater than zero.'); return; }
-        save({ title: title.trim(), amount: Number(amount), date, note, bucket: bucket.id, direction: mode });
+        save({ title: title.trim(), amount: Number(amount), date, note: note.trim(), bucket: bucket.id, direction: mode });
       }}>
         <label>Description<input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="e.g. Monthly contribution"/></label>
         <label>Amount (₹)<div className="amount"><IndianRupee size={16}/><input type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0"/></div></label>
@@ -616,6 +616,7 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
         <span className={`activity-icon entry-icon ${bucket.tint}`}><Icon size={17}/></span>
         <div className="activity-name">
           <b>{entry.title}</b>
+          {entry.note && <small className="activity-note">{entry.note}</small>}
         </div>
         <span className="activity-meta">{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
         <strong className="activity-amount">{money(entry.amount)}</strong>
@@ -730,7 +731,7 @@ export default function App() {
       const [summary, records] = await Promise.all([api.summary(currentMonth), api.transactions()]);
       const entries = records.map(record => {
         const date = new Date(record.transaction_date);
-        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, date: record.transaction_date, month: monthKey(date) };
+        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, note: record.note || '', date: record.transaction_date, month: monthKey(date) };
       });
       const income = {};
       for (const record of records) {
@@ -842,7 +843,7 @@ export default function App() {
   async function saveEntry(entry) {
     setError('');
     try {
-      await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, transaction_date: entry.date });
+      await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, note: entry.note || null, transaction_date: entry.date });
       setModal(null);
       await loadFinancialData();
       showToast(
