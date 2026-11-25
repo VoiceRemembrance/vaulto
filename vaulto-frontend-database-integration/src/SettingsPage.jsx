@@ -100,13 +100,13 @@ export default function SettingsPage({ settings, onSave, onRestore, onDirtyChang
     <div className="content settings-content">
       <div className="welcome">
         <div>
-          <span className="eyebrow dark">YOUR MONEY, YOUR PLAN</span>
+          <span className="eyebrow-pill"><i className="eyebrow-dot" aria-hidden="true"/> YOUR MONEY, YOUR PLAN</span>
           <h1>Allocation <em>settings.</em></h1>
           <p>Choose how your income is divided and name each category your way.</p>
         </div>
       </div>
       <form className="settings-form" onSubmit={save}>
-        <section className="settings-card">
+        <section className="settings-card spotlight-card">
           <div className="settings-heading">
             <div><small>PERSONALIZE YOUR PLAN</small><h2>Allocation percentages</h2></div>
             <span className={`settings-total ${Math.abs(total - 100) < 0.000001 ? 'valid' : 'invalid'}`}>
@@ -140,7 +140,7 @@ export default function SettingsPage({ settings, onSave, onRestore, onDirtyChang
           )}
         </section>
 
-        <section className="settings-card">
+        <section className="settings-card spotlight-card">
           <div className="settings-heading">
             <div><small>KEEP THEIR FINANCIAL MEANING</small><h2>Category names</h2></div>
           </div>

@@ -1,12 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api, saveToken, getToken, clearToken } from './api.js';
 import SettingsPage from './SettingsPage.jsx';
 import { DEFAULT_SETTINGS, getBuckets } from './settings.js';
+import { AnimatedValue, ToastBanner, useCardSpotlight } from './components/InteractiveEffects.jsx';
 import './settings.css';
 import {
   ArrowDownLeft, ArrowUpRight, Bell, CalendarDays, ChartNoAxesCombined, Check,
   ChevronDown, Eye, EyeOff, IndianRupee, LayoutDashboard, LogOut, Menu, Plus,
-  PiggyBank, Settings, ShieldCheck, ShoppingBag, Sparkles, TrendingUp, Trash2, Wallet, X,
+  PiggyBank, ReceiptText, Settings, ShieldCheck, ShoppingBag, Sparkles, TrendingUp,
+  Trash2, Wallet, X,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer,
@@ -77,37 +80,43 @@ function Auth({ done }) {
   }
 
   return (
-    <div className="auth">
+    <div className="auth page-stage">
       <section className="auth-visual">
-        <div className="money-universe" aria-hidden="true">
-          <div className="universe-stars"/>
-          <div className="universe-aurora aurora-one"/><div className="universe-aurora aurora-two"/>
-          <div className="universe-floor"/>
-          <div className="universe-bubble bubble-one"/><div className="universe-bubble bubble-two"/><div className="universe-bubble bubble-three"/>
-          <div className="universe-note note-one">₹</div><div className="universe-note note-two">₹</div>
-          <div className="universe-coin">₹</div>
-          <img className="glass-pig" src="/images/vaulto-money-universe.png" alt="Emerald glass piggy bank in a glowing green money universe" />
-          <div className="orbit-orb orb-expense" aria-label="Expense"><ShoppingBag size={15}/></div>
-          <div className="orbit-orb orb-savings" aria-label="Savings"><PiggyBank size={15}/></div>
-          <div className="orbit-orb orb-invest" aria-label="Investments"><TrendingUp size={15}/></div>
-          <div className="orbit-orb orb-emergency" aria-label="Emergency fund"><ShieldCheck size={15}/></div>
+        <div className="nexora-hero-bg" aria-hidden="true">
+          <div className="nexora-sphere-wrap">
+            <div className="nexora-sphere"/>
+            <div className="nexora-ring nexora-ring-1"/>
+            <div className="nexora-ring nexora-ring-2"/>
+            <span className="nexora-node nexora-node-1"/>
+            <span className="nexora-node nexora-node-2"/>
+          </div>
         </div>
         <Brand/>
         <div className="hero-copy">
-          <span className="eyebrow">YOUR MONEY, WITH A PLAN</span>
+          <span className="eyebrow-pill"><i className="eyebrow-dot" aria-hidden="true"/> STUDENT POCKET ACCOUNTABILITY</span>
           <h1>Make room for<br/><em>what matters.</em></h1>
-          <p>A calmer way to manage your money. Give every rupee a purpose, without losing sight of the bigger picture.</p>
+          <p>A sharper way to manage your pocket money. Give every rupee a clear purpose, without losing sight of your goals.</p>
         </div>
-        <div className="preview">
-          <div className="preview-top">Your monthly money plan <span>On track</span></div>
-          <b>₹20,000</b><small>monthly income</small>
+        <div className="preview spotlight-card">
+          <div className="preview-top">
+            <div>
+              <small>MONTHLY PLAN BASE</small>
+              <b>₹20,000</b>
+            </div>
+            <span className="preview-status">On track</span>
+          </div>
           <div className="split"><i/><i/><i/><i/></div>
-          <div className="preview-legend">Spend 5%　 Save 25%　 Invest 25%　 Protect 45%</div>
+          <div className="preview-metrics">
+            <div><strong>5%</strong><small>Spend</small></div>
+            <div><strong>25%</strong><small>Save</small></div>
+            <div><strong>25%</strong><small>Invest</small></div>
+            <div><strong>45%</strong><small>Protect</small></div>
+          </div>
         </div>
-        <small className="visual-foot">A little clarity goes a long way.</small>
+        <small className="visual-foot">Built for student financial clarity.</small>
       </section>
       <section className="auth-panel">
-        <div className="auth-inner">
+        <div className="auth-inner spotlight-card">
           <div className="mobile-brand"><Brand/></div>
           <span className="eyebrow dark">WELCOME TO VAULTO</span>
           <h2>{mode === 'login' ? 'Good to see you.' : 'Start your money journey.'}</h2>
@@ -151,26 +160,116 @@ function Sidebar({ page, setPage, user, logout, open, setOpen }) {
       <button className={page === 'overview' ? 'nav active' : 'nav'} onClick={() => navigate('overview')}><LayoutDashboard size={18}/>Overview</button>
       <button className={page === 'analytics' ? 'nav active' : 'nav'} onClick={() => navigate('analytics')}><ChartNoAxesCombined size={18}/>Analytics <span className="new">NEW</span></button>
       <button className={page === 'settings' ? 'nav active' : 'nav'} onClick={() => navigate('settings')}><Settings size={18}/>Settings</button>
-      <div className="side-tip"><Sparkles size={19}/><b>Small steps add up.</b><p>Give every rupee a job and make progress feel simple.</p></div>
+      <div className="side-tip spotlight-card">
+        <Sparkles size={19}/>
+        <b>Accountability Pays Off</b>
+        <p>Give every rupee a job and track your student pocket money effortlessly.</p>
+      </div>
       <div className="profile">
         <div className="avatar">{user.name[0].toUpperCase()}</div>
         <div><b>{user.name}</b><small>{user.is_guest ? 'Guest account' : user.email}</small></div>
-        <button onClick={logout} title="Sign out"><LogOut size={16}/></button>
+        <button onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={16}/></button>
       </div>
-      <small className="version">PAISA PILOT · PREVIEW 1.0</small>
+      <small className="version">VAULTO · STUDENT PILOT 1.0</small>
     </aside>
   </>;
 }
 
-function Header({ page, setOpen, user }) {
+function Header({ page, setOpen, user, data, buckets, onOpenSettings }) {
+  const [pulseOpen, setPulseOpen] = useState(false);
+  const pulseRef = useRef(null);
   const pageName = { overview: 'Overview', analytics: 'Analytics', settings: 'Settings' }[page];
+
+  useEffect(() => {
+    if (!pulseOpen) return undefined;
+    const onPointerDown = event => {
+      if (pulseRef.current && !pulseRef.current.contains(event.target)) setPulseOpen(false);
+    };
+    const onKeyDown = event => {
+      if (event.key === 'Escape') setPulseOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [pulseOpen]);
+
+  const pulse = useMemo(() => {
+    const income = Number(data.income[currentMonth] || 0);
+    const currentTotals = totals(data.entries, currentMonth);
+    const allocated = buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0);
+    const goalsReached = buckets.filter(bucket => {
+      const target = Number(data.targets[bucket.id] || 0);
+      return target > 0 && Math.max(0, currentTotals[bucket.id]) >= target;
+    }).length;
+    const unallocated = Math.max(0, income - allocated);
+    const score = income > 0 ? Math.min(100, Math.round((allocated / income) * 100)) : 0;
+    const monthEntries = data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income').length;
+    return { income, allocated, unallocated, goalsReached, score, monthEntries };
+  }, [data, buckets]);
+
   return <header className="topbar">
     <button className="hamb" aria-label="Open navigation" onClick={() => setOpen(true)}><Menu/></button>
     <div className="crumb">Workspace / <b>{pageName}</b></div>
     <div className="top-right">
-      <span><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-      <button className="bell"><Bell size={18}/></button>
-      <div className="avatar">{user.name[0].toUpperCase()}</div>
+      <span className="date-chip"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+      <div className="pulse-anchor" ref={pulseRef}>
+        <button
+          className={pulseOpen ? 'bell active' : 'bell'}
+          onClick={() => setPulseOpen(openState => !openState)}
+          aria-label="Accountability pulse notifications"
+          aria-expanded={pulseOpen}
+          title="Accountability Pulse"
+        >
+          <Bell size={18}/>
+          {pulse.monthEntries > 0 && <i className="bell-dot" aria-hidden="true"/>}
+        </button>
+        {pulseOpen && (
+          <div className="helios-popover pulse-popover" role="dialog" aria-label="Accountability Pulse">
+            <div className="popover-head">
+              <div>
+                <small>ACCOUNTABILITY PULSE</small>
+                <h4>Pocket Money Health</h4>
+              </div>
+              <span className="pulse-badge">{pulse.score}% tracked</span>
+            </div>
+            <div className="pulse-metrics">
+              <div>
+                <small>Goals reached</small>
+                <b>{pulse.goalsReached} / {buckets.length}</b>
+              </div>
+              <div>
+                <small>Unallocated left</small>
+                <b>{money(pulse.unallocated)}</b>
+              </div>
+              <div>
+                <small>Entries logged</small>
+                <b>{pulse.monthEntries}</b>
+              </div>
+            </div>
+            <div className="pulse-bar">
+              <i style={{ width: `${pulse.score}%` }}/>
+            </div>
+            <p className="pulse-note">
+              {pulse.income === 0
+                ? 'Set your monthly pocket money on Overview to unlock personalized accountability milestones.'
+                : pulse.goalsReached === buckets.length
+                  ? 'Every monthly bucket reached its target. Outstanding discipline!'
+                  : `${money(pulse.allocated)} allocated out of ${money(pulse.income)} this month.`}
+            </p>
+            <button
+              type="button"
+              className="popover-cta"
+              onClick={() => { setPulseOpen(false); onOpenSettings(); }}
+            >
+              Customize split <ArrowUpRight size={14}/>
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="avatar" title={user.name}>{user.name[0].toUpperCase()}</div>
     </div>
   </header>;
 }
@@ -183,20 +282,36 @@ function Ring({ value, color }) {
   </svg><div><b>{Math.round(value)}%</b><small>of goal</small></div></div>;
 }
 
-function BucketCard({ bucket, income, target, total, add, remove }) {
+function BucketCard({ bucket, target, total, add, remove, onInspect }) {
   const done = Math.max(0, total);
   const progress = target ? done / target * 100 : 0;
   const remaining = Math.max(0, target - done);
   const Icon = bucket.Icon;
-  return <article className={`bucket ${bucket.tint}`}>
+  return <article
+    className={`bucket spotlight-card ${bucket.tint}`}
+    onClick={() => onInspect(bucket)}
+    role="button"
+    tabIndex={0}
+    onKeyDown={event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onInspect(bucket);
+      }
+    }}
+  >
     <div className="bucket-top"><span className="bucket-icon"><Icon size={19}/></span><span className="allocation">{bucket.pct}% of income</span></div>
     <h3>{bucket.name}</h3>
-    <div className="bucket-numbers"><div><strong>{money(done)}</strong><small>of {money(target)} recommended</small></div><Ring value={progress} color={bucket.color}/></div>
-    <div className="track"><i style={{ width: `${Math.min(100, progress)}%`, background: bucket.color }}/></div>
+    <div className="bucket-numbers"><div><strong><AnimatedValue value={done} format={money}/></strong><small>of {money(target)} recommended</small></div><Ring value={progress} color={bucket.color}/></div>
+    <div className="track"><i style={{ width: `${Math.min(100, progress)}%`, background: bucket.color, color: bucket.color }}/></div>
     <div className="bucket-foot"><span>{remaining ? `${money(remaining)} to go` : 'Monthly target reached'}</span><b>{Math.round(progress)}%</b></div>
-    <div className="bucket-buttons"><button onClick={() => add(bucket, 'add')}><Plus size={14}/> Add entry</button><button onClick={() => remove(bucket, 'remove')}><ArrowDownLeft size={14}/> Remove</button></div>
+    <div className="bucket-buttons" onClick={event => event.stopPropagation()}>
+      <button onClick={() => add(bucket, 'add')}><Plus size={14}/> Add entry</button>
+      <button onClick={() => remove(bucket, 'remove')}><ArrowDownLeft size={14}/> Remove</button>
+    </div>
   </article>;
 }
+
+const QUICK_AMOUNTS = [100, 250, 500, 1000];
 
 function EntryModal({ bucket, mode, close, save }) {
   const [title, setTitle] = useState('');
@@ -205,8 +320,15 @@ function EntryModal({ bucket, mode, close, save }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const Icon = bucket.Icon;
-  return <div className="modal-bg" onMouseDown={close}>
-    <div className="modal" onMouseDown={event => event.stopPropagation()}>
+
+  useEffect(() => {
+    const onKeyDown = event => { if (event.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [close]);
+
+  return createPortal(<div className="modal-bg" onMouseDown={close}>
+    <div className="modal modal-pop" role="dialog" aria-modal="true" aria-label={mode === 'remove' ? 'Record a removal' : 'Add a new entry'} onMouseDown={event => event.stopPropagation()}>
       <div className="modal-head"><div className={`bucket-icon ${bucket.tint}`}><Icon size={19}/></div><div><h3>{mode === 'remove' ? 'Record a removal' : 'Add a new entry'}</h3><small>{bucket.name}</small></div><button className="close" aria-label="Close dialog" onClick={close}><X/></button></div>
       <form onSubmit={event => {
         event.preventDefault();
@@ -215,41 +337,309 @@ function EntryModal({ bucket, mode, close, save }) {
       }}>
         <label>Description<input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="e.g. Monthly contribution"/></label>
         <label>Amount (₹)<div className="amount"><IndianRupee size={16}/><input type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0"/></div></label>
+        <div className="quick-chips" aria-label="Quick amount presets">
+          {QUICK_AMOUNTS.map(preset => (
+            <button
+              key={preset}
+              type="button"
+              className="quick-chip"
+              onClick={() => setAmount(current => String((Number(current) || 0) + preset))}
+            >
+              +₹{preset.toLocaleString('en-IN')}
+            </button>
+          ))}
+        </div>
         <label>Date<input type="date" value={date} onChange={event => setDate(event.target.value)}/></label>
-        <label>Note <small>(optional)</small><textarea rows="2" value={note} onChange={event => setNote(event.target.value)} placeholder="Add a little context..."/></label>
+        <label><span>Note <small>(optional)</small></span><textarea rows="2" value={note} onChange={event => setNote(event.target.value)} placeholder="Add a little context..."/></label>
         {error && <p className="error">{error}</p>}
         <div className="modal-actions"><button type="button" className="cancel" onClick={close}>Cancel</button><button className="primary">{mode === 'remove' ? 'Record removal' : 'Save entry'} <ArrowUpRight size={15}/></button></div>
       </form>
     </div>
-  </div>;
+  </div>, document.body);
 }
 
-function Overview({ data, buckets, onSetIncome, open, del, busy, error }) {
+function BucketInspectorModal({ bucket, target, total, entries, close, onAction, onDelete }) {
+  const Icon = bucket.Icon;
+  const done = Math.max(0, total);
+  const progress = target ? (done / target) * 100 : 0;
+  const remaining = Math.max(0, target - done);
+  const today = new Date();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysLeft = Math.max(1, daysInMonth - today.getDate() + 1);
+  const dailyPace = remaining / daysLeft;
+
+  useEffect(() => {
+    const onKeyDown = event => { if (event.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [close]);
+
+  return createPortal(
+    <div className="modal-bg" onMouseDown={close}>
+      <div className="modal modal-pop inspector-modal" role="dialog" aria-modal="true" aria-label={`${bucket.name} inspector`} onMouseDown={event => event.stopPropagation()}>
+        <div className="modal-head">
+          <div className={`bucket-icon ${bucket.tint}`}><Icon size={19}/></div>
+          <div>
+            <h3>{bucket.name}</h3>
+            <small>{bucket.pct}% monthly allocation · {entries.length} {entries.length === 1 ? 'entry' : 'entries'} this month</small>
+          </div>
+          <button className="close" aria-label="Close inspector" onClick={close}><X/></button>
+        </div>
+
+        <div className="inspector-hero">
+          <div>
+            <small>CURRENT BALANCE</small>
+            <strong>{money(done)}</strong>
+            <p>{remaining ? `${money(remaining)} remaining of ${money(target)} goal` : `Goal of ${money(target)} reached!`}</p>
+          </div>
+          <Ring value={progress} color={bucket.color}/>
+        </div>
+
+        <div className="inspector-stats">
+          <div>
+            <small>Recommended target</small>
+            <b>{money(target)}</b>
+          </div>
+          <div>
+            <small>Daily pace ({daysLeft}d left)</small>
+            <b>{remaining ? `${money(Math.ceil(dailyPace))}/day` : 'On target'}</b>
+          </div>
+        </div>
+
+        <div className="inspector-list-head">
+          <small>THIS MONTH IN {bucket.name.toUpperCase()}</small>
+        </div>
+        <div className="inspector-entries">
+          {entries.length ? entries.map(entry => (
+            <div className="inspector-row" key={entry.id}>
+              <div>
+                <b>{entry.title}</b>
+                <small>{new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</small>
+              </div>
+              <strong className={entry.direction === 'remove' ? 'removed' : ''}>
+                {entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}
+              </strong>
+              <button type="button" onClick={() => onDelete(entry.id)} title="Delete entry" aria-label={`Delete ${entry.title}`}>
+                <Trash2 size={14}/>
+              </button>
+            </div>
+          )) : <div className="empty">No entries recorded in this bucket yet.</div>}
+        </div>
+
+        <div className="modal-actions inspector-actions">
+          <button type="button" className="cancel" onClick={() => { close(); onAction(bucket, 'remove'); }}>
+            <ArrowDownLeft size={15}/> Remove
+          </button>
+          <button type="button" className="primary" onClick={() => { close(); onAction(bucket, 'add'); }}>
+            <Plus size={15}/> Add entry
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function EntryDetailModal({ entry, bucket, income, close, onDelete }) {
+  const Icon = bucket.Icon;
+  const share = income > 0 ? ((entry.amount / income) * 100).toFixed(1) : '0.0';
+
+  useEffect(() => {
+    const onKeyDown = event => { if (event.key === 'Escape') close(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [close]);
+
+  return createPortal(
+    <div className="modal-bg" onMouseDown={close}>
+      <div className="modal modal-pop receipt-modal" role="dialog" aria-modal="true" aria-label="Transaction snapshot" onMouseDown={event => event.stopPropagation()}>
+        <div className="modal-head">
+          <div className={`bucket-icon ${bucket.tint}`}><Icon size={19}/></div>
+          <div>
+            <h3>Transaction snapshot</h3>
+            <small>{bucket.name}</small>
+          </div>
+          <button className="close" aria-label="Close transaction details" onClick={close}><X/></button>
+        </div>
+
+        <div className="receipt-amount">
+          <span className="receipt-pill">
+            <ReceiptText size={13}/> {entry.direction === 'remove' ? 'Removal recorded' : 'Contribution logged'}
+          </span>
+          <strong className={entry.direction === 'remove' ? 'removed' : ''}>
+            {entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}
+          </strong>
+          <p>{entry.title}</p>
+        </div>
+
+        <div className="receipt-grid">
+          <div>
+            <small>Date</small>
+            <b>{new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</b>
+          </div>
+          <div>
+            <small>Share of pocket money</small>
+            <b>{share}%</b>
+          </div>
+          <div>
+            <small>Bucket</small>
+            <b>{bucket.name}</b>
+          </div>
+          <div>
+            <small>Type</small>
+            <b>{entry.direction === 'remove' ? 'Debit / Removal' : 'Credit / Allocation'}</b>
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button type="button" className="cancel" onClick={close}>Close</button>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => { onDelete(entry.id); close(); }}
+          >
+            <Trash2 size={14}/> Delete entry
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) {
   const income = Number(data.income[currentMonth] || 0);
   const currentTotals = totals(data.entries, currentMonth);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(income));
   const [savingIncome, setSavingIncome] = useState(false);
-  const recent = data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income')
-    .slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+  const [monthSummaryOpen, setMonthSummaryOpen] = useState(false);
+  const [inspectBucket, setInspectBucket] = useState(null);
+  const [inspectEntry, setInspectEntry] = useState(null);
+  const monthRef = useRef(null);
+
+  useEffect(() => {
+    if (!monthSummaryOpen) return undefined;
+    const onPointerDown = event => {
+      if (monthRef.current && !monthRef.current.contains(event.target)) setMonthSummaryOpen(false);
+    };
+    const onKeyDown = event => {
+      if (event.key === 'Escape') setMonthSummaryOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [monthSummaryOpen]);
+
+  const monthEntries = data.entries
+    .filter(entry => entry.month === currentMonth && entry.bucket !== 'income')
+    .slice()
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const recent = monthEntries.slice(0, 6);
+  const allocatedTotal = buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0);
+  const unallocated = Math.max(0, income - allocatedTotal);
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
   return <div className="content">
-    <div className="welcome"><div><span className="eyebrow dark">YOUR FINANCIAL SNAPSHOT</span><h1>Money looks better<br/><em>in balance.</em></h1><p>A clear view of where your money goes — and where it can take you.</p></div><div className="month-pill"><CalendarDays size={15}/>{new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}<ChevronDown size={14}/></div></div>
+    <div className="welcome">
+      <div>
+        <span className="eyebrow-pill"><i className="eyebrow-dot" aria-hidden="true"/> YOUR FINANCIAL SNAPSHOT</span>
+        <h1>Welcome, <em>{firstName}</em></h1>
+        <p>A clear view of where your pocket money goes — and how every rupee builds your future.</p>
+      </div>
+      <div className="month-anchor" ref={monthRef}>
+        <button
+          type="button"
+          className={monthSummaryOpen ? 'month-pill active' : 'month-pill'}
+          onClick={() => setMonthSummaryOpen(openState => !openState)}
+          aria-expanded={monthSummaryOpen}
+        >
+          <CalendarDays size={15}/>
+          {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+          <ChevronDown size={14} className={monthSummaryOpen ? 'rotated' : ''}/>
+        </button>
+        {monthSummaryOpen && (
+          <div className="helios-popover month-popover" role="dialog" aria-label="Monthly summary">
+            <div className="popover-head">
+              <div>
+                <small>MONTHLY BRIEF</small>
+                <h4>{new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</h4>
+              </div>
+              <span className="pulse-badge">{monthEntries.length} logs</span>
+            </div>
+            <div className="month-popover-rows">
+              <div><span>Pocket money</span><b>{money(income)}</b></div>
+              <div><span>Allocated</span><b className="gain-text">{money(allocatedTotal)}</b></div>
+              <div><span>Unallocated</span><b>{money(unallocated)}</b></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+
     {error && <p className="error" role="alert">{error}</p>}
-    <section className="income-card"><div>
+
+    <section className="income-card spotlight-card"><div>
       <span className="income-label"><Wallet size={16}/> MONTHLY INCOME</span>
-      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0)); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number">{money(income)} <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
-      <p>Your income is the starting point for this month's money plan.</p>
-    </div><div className="income-stats"><div><small>Allocated so far</small><b>{money(buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0))}</b></div><i/><div><small>Plan distribution</small><b>{buckets.reduce((sum, bucket) => sum + bucket.pct, 0)}%</b></div></div><span className="rupee-art">₹</span></section>
-    <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Track each contribution below.</p></div><span className="recommend"><Sparkles size={14}/> Recommended split</span></div>
-    <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open}/>)}</div>
-    <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income').length} entries this month</span></div>
-    <div className="entries">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
+      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0)); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number"><AnimatedValue value={income} format={money}/> <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
+      <p>Your income is the starting point for this month's pocket money plan.</p>
+    </div><div className="income-stats"><div><small>Allocated so far</small><b><AnimatedValue value={allocatedTotal} format={money}/></b></div><i/><div><small>Plan distribution</small><b>{buckets.reduce((sum, bucket) => sum + bucket.pct, 0)}%</b></div></div><span className="rupee-art">$</span></section>
+
+    <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Click any card to inspect details or log an entry.</p></div><span className="recommend"><Sparkles size={14}/> Recommended split</span></div>
+    <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open} onInspect={setInspectBucket}/>)}</div>
+
+    <div className="section-title recent-title"><div><small>YOUR LATEST ACTIVITY</small><h2>Recent entries</h2></div><span className="entry-count">{monthEntries.length} entries this month</span></div>
+    <div className="entries spotlight-card">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
       const bucket = buckets.find(item => item.id === entry.bucket);
       if (!bucket) return null;
       const Icon = bucket.Icon;
-      return <div className="entry" key={entry.id}><span className={`entry-icon ${bucket.tint}`}><Icon size={17}/></span><div className="entry-desc"><b>{entry.title}</b><small>{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small></div><strong className={entry.direction === 'remove' ? 'removed' : ''}>{entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}</strong><button onClick={() => del(entry.id)} title="Delete entry" aria-label={`Delete ${entry.title}`}><Trash2 size={15}/></button></div>;
+      return <div
+        className="entry"
+        key={entry.id}
+        onClick={() => setInspectEntry({ entry, bucket })}
+        role="button"
+        tabIndex={0}
+        onKeyDown={event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setInspectEntry({ entry, bucket });
+          }
+        }}
+      >
+        <span className={`entry-icon ${bucket.tint}`}><Icon size={17}/></span>
+        <div className="entry-desc">
+          <b>{entry.title}</b>
+          <small>{bucket.name} · {new Date(entry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</small>
+        </div>
+        <strong className={entry.direction === 'remove' ? 'removed' : ''}>{entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}</strong>
+        <button onClick={event => { event.stopPropagation(); del(entry.id); }} title="Delete entry" aria-label={`Delete ${entry.title}`}><Trash2 size={15}/></button>
+      </div>;
     }) : <div className="empty">No entries yet. Add your first transaction to start tracking.</div>}</div>
     <p className="disclaimer"><ShieldCheck size={14}/> Planning guideline, not financial advice. {buckets.find(bucket => bucket.id === 'investment')?.name} values show contributions only — not market returns.</p>
+
+    {inspectBucket && (
+      <BucketInspectorModal
+        bucket={inspectBucket}
+        target={Number(data.targets[inspectBucket.id] || 0)}
+        total={currentTotals[inspectBucket.id]}
+        entries={monthEntries.filter(entry => entry.bucket === inspectBucket.id)}
+        close={() => setInspectBucket(null)}
+        onAction={open}
+        onDelete={del}
+      />
+    )}
+    {inspectEntry && (
+      <EntryDetailModal
+        entry={inspectEntry.entry}
+        bucket={inspectEntry.bucket}
+        income={income}
+        close={() => setInspectEntry(null)}
+        onDelete={del}
+      />
+    )}
   </div>;
 }
 
@@ -276,21 +666,32 @@ function Analytics({ data, buckets }) {
     ['savings', categoryName('savings'), PiggyBank, 'mint'],
     ['investment', categoryName('investment'), TrendingUp, 'lavender'],
   ];
+
+  const tooltipStyle = {
+    background: '#0E0E11',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: 12,
+    color: '#ffffff',
+    boxShadow: '0 18px 44px rgba(0, 0, 0, 0.72), 0 0 24px rgba(230, 46, 45, 0.12)',
+  };
+
   return <div className="content">
-    <div className="welcome"><div><span className="eyebrow dark">YOUR MONEY, OVER TIME</span><h1>See the bigger <em>picture.</em></h1><p>Patterns become clearer when you look beyond a single month.</p></div><div className="month-pill"><CalendarDays size={15}/>Last {rows.length} months<ChevronDown size={14}/></div></div>
-    <div className="averages">{averages.map(([key, label, Icon, tint]) => <div className="average" key={key}><span className={`average-icon ${tint}`}><Icon size={18}/></span><small>{label}</small><b>{money(average(key))}</b><em>Monthly average</em></div>)}</div>
-    <section className="chart-card"><div className="chart-head"><div><small>MONTHLY BREAKDOWN</small><h2>Where your money goes</h2><p>Actual tracked amounts, month by month.</p></div><span className="chart-tag">INR · ₹</span></div>
-      <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={rows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}><defs><linearGradient id="ex" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1F8A4C" stopOpacity=".22"/><stop offset="100%" stopColor="#1F8A4C" stopOpacity="0"/></linearGradient><linearGradient id="sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2ECC71" stopOpacity=".22"/><stop offset="100%" stopColor="#2ECC71" stopOpacity="0"/></linearGradient></defs><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#29483b"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8eaa9b', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8eaa9b', fontSize: 11 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={55}/><Tooltip formatter={value => money(value)} cursor={{ stroke: '#98F5C0', strokeDasharray: '4 4' }} contentStyle={{ background: '#103326', border: '1px solid rgba(167,196,181,.2)', borderRadius: 12, color: '#f0fdf4', boxShadow: '0 16px 36px rgba(0,0,0,.24)' }} labelStyle={{ color: '#a7c4b5', marginBottom: 6 }} itemStyle={{ color: '#f0fdf4' }}/><Legend iconType="circle" wrapperStyle={{ color: '#a7c4b5', fontSize: 12, paddingTop: 12 }}/><Area type="monotone" dataKey="expense" name={categoryName('expense')} stroke="#1F8A4C" fill="url(#ex)" strokeWidth={2.5}/><Area type="monotone" dataKey="savings" name={categoryName('savings')} stroke="#2ECC71" fill="url(#sv)" strokeWidth={2.5}/><Area type="monotone" dataKey="investment" name={categoryName('investment')} stroke="#98F5C0" fill="transparent" strokeWidth={2.5}/></AreaChart></ResponsiveContainer></div>
+    <div className="welcome"><div><span className="eyebrow-pill"><i className="eyebrow-dot" aria-hidden="true"/> YOUR MONEY, OVER TIME</span><h1>See the bigger <em>picture.</em></h1><p>Patterns become clearer when you look beyond a single month.</p></div><div className="month-pill"><CalendarDays size={15}/>Last {rows.length} months<ChevronDown size={14}/></div></div>
+    <div className="averages">{averages.map(([key, label, Icon, tint]) => <div className="average spotlight-card" key={key}><span className={`average-icon ${tint}`}><Icon size={18}/></span><small>{label}</small><b><AnimatedValue value={average(key)} format={money}/></b><em>Monthly average</em></div>)}</div>
+    <section className="chart-card spotlight-card"><div className="chart-head"><div><small>MONTHLY BREAKDOWN</small><h2>Where your money goes</h2><p>Actual tracked amounts, month by month.</p></div><span className="chart-tag">INR · ₹</span></div>
+      <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={rows} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}><defs><linearGradient id="ex" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#EF3B3A" stopOpacity=".28"/><stop offset="100%" stopColor="#EF3B3A" stopOpacity="0"/></linearGradient><linearGradient id="sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22C55E" stopOpacity=".22"/><stop offset="100%" stopColor="#22C55E" stopOpacity="0"/></linearGradient><linearGradient id="inv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F59E0B" stopOpacity=".2"/><stop offset="100%" stopColor="#F59E0B" stopOpacity="0"/></linearGradient></defs><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="rgba(255, 255, 255, 0.06)"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8e8e98', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8e8e98', fontSize: 12 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={58}/><Tooltip formatter={value => money(value)} cursor={{ stroke: '#EF3B3A', strokeDasharray: '4 4' }} contentStyle={tooltipStyle} labelStyle={{ color: '#f4f4f6', marginBottom: 6, fontWeight: 600 }} itemStyle={{ color: '#e4e4e7' }}/><Legend iconType="circle" wrapperStyle={{ color: '#a1a1aa', fontSize: 12, paddingTop: 12 }}/><Area type="monotone" dataKey="expense" name={categoryName('expense')} stroke="#EF3B3A" fill="url(#ex)" strokeWidth={2.4} activeDot={{ r: 5, fill: '#FF5B5A', stroke: '#09090b', strokeWidth: 2 }}/><Area type="monotone" dataKey="savings" name={categoryName('savings')} stroke="#22C55E" fill="url(#sv)" strokeWidth={2.4} activeDot={{ r: 5, fill: '#4ADE80', stroke: '#09090b', strokeWidth: 2 }}/><Area type="monotone" dataKey="investment" name={categoryName('investment')} stroke="#F59E0B" fill="url(#inv)" strokeWidth={2.4} activeDot={{ r: 5, fill: '#FBBF24', stroke: '#09090b', strokeWidth: 2 }}/></AreaChart></ResponsiveContainer></div>
     </section>
-    <section className="chart-card"><div className="chart-head"><div><small>INCOME & RESERVES</small><h2>Your monthly income</h2><p>Income and {categoryName('emergency').toLowerCase()} contributions.</p></div></div>
-      <div className="chart short"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows}><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#29483b"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8eaa9b', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8eaa9b', fontSize: 11 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={55}/><Tooltip formatter={value => money(value)} cursor={{ stroke: '#98F5C0', strokeDasharray: '4 4' }} contentStyle={{ background: '#103326', border: '1px solid rgba(167,196,181,.2)', borderRadius: 12, color: '#f0fdf4', boxShadow: '0 16px 36px rgba(0,0,0,.24)' }} labelStyle={{ color: '#a7c4b5', marginBottom: 6 }} itemStyle={{ color: '#f0fdf4' }}/><Legend iconType="circle" wrapperStyle={{ color: '#a7c4b5', fontSize: 12, paddingTop: 12 }}/><Line dataKey="income" name="Income" stroke="#2ECC71" strokeWidth={2.5}/><Line dataKey="emergency" name={categoryName('emergency')} stroke="#0F766E" strokeWidth={2.5}/></LineChart></ResponsiveContainer></div>
+    <section className="chart-card spotlight-card"><div className="chart-head"><div><small>INCOME & RESERVES</small><h2>Your monthly income</h2><p>Income and {categoryName('emergency').toLowerCase()} contributions.</p></div></div>
+      <div className="chart short"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows}><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="rgba(255, 255, 255, 0.06)"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8e8e98', fontSize: 12 }}/><YAxis axisLine={false} tickLine={false} tick={{ fill: '#8e8e98', fontSize: 12 }} tickFormatter={value => value >= 1000 ? `₹${value / 1000}k` : `₹${value}`} width={58}/><Tooltip formatter={value => money(value)} cursor={{ stroke: '#EF3B3A', strokeDasharray: '4 4' }} contentStyle={tooltipStyle} labelStyle={{ color: '#f4f4f6', marginBottom: 6, fontWeight: 600 }} itemStyle={{ color: '#e4e4e7' }}/><Legend iconType="circle" wrapperStyle={{ color: '#a1a1aa', fontSize: 12, paddingTop: 12 }}/><Line type="monotone" dataKey="income" name="Income" stroke="#EF3B3A" strokeWidth={2.5} dot={{ r: 3, fill: '#EF3B3A' }} activeDot={{ r: 6, fill: '#FF5B5A', stroke: '#09090b', strokeWidth: 2 }}/><Line type="monotone" dataKey="emergency" name={categoryName('emergency')} stroke="#E4E4E7" strokeWidth={2.2} dot={{ r: 3, fill: '#E4E4E7' }} activeDot={{ r: 5, fill: '#ffffff', stroke: '#09090b', strokeWidth: 2 }}/></LineChart></ResponsiveContainer></div>
     </section>
-    <div className="analytics-note"><ShieldCheck size={18}/><div><b>How these numbers work</b><p>Monthly averages use months with saved income or activity. {categoryName('savings')}, {categoryName('investment')} and {categoryName('emergency').toLowerCase()} are net contributions after removals. {categoryName('investment')} profit or loss is excluded.</p></div></div>
+    <div className="analytics-note spotlight-card"><ShieldCheck size={18}/><div><b>How these numbers work</b><p>Monthly averages use months with saved income or activity. {categoryName('savings')}, {categoryName('investment')} and {categoryName('emergency').toLowerCase()} are net contributions after removals. {categoryName('investment')} profit or loss is excluded.</p></div></div>
     <p className="disclaimer">Analytics are calculated from transactions retrieved from your Vaulto account.</p>
   </div>;
 }
 
 export default function App() {
+  useCardSpotlight();
+
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -302,7 +703,19 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [settingsDirty, setSettingsDirty] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
   const buckets = useMemo(() => getBuckets(settings), [settings]);
+
+  const showToast = useCallback((title, subtitle = '', tone = 'success') => {
+    setToast({ title, subtitle, tone });
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+  }, []);
 
   async function loadFinancialData() {
     setBusy(true);
@@ -367,6 +780,7 @@ export default function App() {
       setSettings(savedSettings);
       setSettingsLoaded(true);
       await loadFinancialData();
+      showToast(`Welcome back, ${currentUser.name.split(' ')[0]}`, 'Your pocket money dashboard is ready.', 'sparkle');
     } catch (requestError) {
       setError(requestError.message || 'Unable to load your settings.');
     }
@@ -394,6 +808,7 @@ export default function App() {
   function navigate(nextPage) {
     if (nextPage !== page && settingsDirty && !window.confirm('Discard your unsaved settings changes?')) return;
     setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const onSettingsDirtyChange = useCallback(dirty => setSettingsDirty(dirty), []);
@@ -408,11 +823,14 @@ export default function App() {
     const saved = await api.updateSettings(payload);
     setSettings(saved);
     await loadFinancialData();
+    showToast('Plan updated', 'Your allocation split is now active.', 'sparkle');
     return saved;
   }
 
   async function restoreSettings() {
-    return saveSettings(DEFAULT_SETTINGS);
+    const saved = await saveSettings(DEFAULT_SETTINGS);
+    showToast('Defaults restored', 'Your buckets are back to the recommended split.');
+    return saved;
   }
 
   async function saveEntry(entry) {
@@ -421,6 +839,11 @@ export default function App() {
       await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, transaction_date: entry.date });
       setModal(null);
       await loadFinancialData();
+      showToast(
+        entry.direction === 'remove' ? 'Removal recorded' : 'Entry logged',
+        `${entry.title} · ${money(entry.amount)}`,
+        'sparkle',
+      );
     } catch (requestError) {
       setError(requestError.message || 'Unable to save this transaction.');
     }
@@ -431,6 +854,7 @@ export default function App() {
     try {
       await api.deleteTransaction(id);
       await loadFinancialData();
+      showToast('Entry removed', 'Your monthly totals have been recalculated.');
     } catch (requestError) {
       setError(requestError.message || 'Unable to delete this transaction.');
     }
@@ -449,6 +873,7 @@ export default function App() {
         transaction_date: new Date().toISOString().slice(0, 10),
       });
       await loadFinancialData();
+      showToast('Monthly income updated', `New monthly target base: ${money(nextIncome)}`, 'sparkle');
       return true;
     } catch (requestError) {
       setError(requestError.message || 'Unable to update income.');
@@ -463,12 +888,15 @@ export default function App() {
   return <div className="app">
     <Sidebar page={page} setPage={navigate} user={user} logout={logout} open={menu} setOpen={setMenu}/>
     <main>
-      <Header page={page} setOpen={setMenu} user={user}/>
+      <Header page={page} setOpen={setMenu} user={user} data={data} buckets={buckets} onOpenSettings={() => navigate('settings')}/>
       {error && page !== 'overview' && <p className="error app-error" role="alert">{error}</p>}
-      {page === 'overview' && <Overview data={data} buckets={buckets} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error}/>}
-      {page === 'analytics' && <Analytics data={data} buckets={buckets}/>}
-      {page === 'settings' && <SettingsPage settings={settings} onSave={saveSettings} onRestore={restoreSettings} onDirtyChange={onSettingsDirtyChange}/>}
+      <div key={page} className="page-stage">
+        {page === 'overview' && <Overview data={data} buckets={buckets} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error} user={user}/>}
+        {page === 'analytics' && <Analytics data={data} buckets={buckets}/>}
+        {page === 'settings' && <SettingsPage settings={settings} onSave={saveSettings} onRestore={restoreSettings} onDirtyChange={onSettingsDirtyChange}/>}
+      </div>
     </main>
     {modal && <EntryModal bucket={modal.bucket} mode={modal.mode} close={() => setModal(null)} save={saveEntry}/>}
+    <ToastBanner toast={toast} onDismiss={() => setToast(null)}/>
   </div>;
 }

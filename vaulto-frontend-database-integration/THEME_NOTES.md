@@ -1,17 +1,15 @@
-# Green Piggy Bank Finance theme
+# Nexora Carbon & Crimson Theme
 
-The theme is shared across the app from `src/theme.css`, and its fixed animated background is mounted once from `src/main.jsx`.
+The theme is shared across the app from `src/theme.css` and `src/styles.css`, and its fixed scroll-reactive dark-carbon & crimson orbital background is mounted once from `src/main.jsx`.
 
 ## Tune the palette
 
-Edit the named CSS variables at the top of `src/theme.css`. The main background uses `--forest-950`, `--forest-900`, and `--forest-800`; emerald and mint accents are grouped below them. Category chart colors also live in `src/settings.js` and `src/App.jsx` so the graph strokes and progress rings match the CSS palette.
+Edit the named CSS variables at the top of `src/theme.css`. The core OLED black surfaces use `--carbon-950` through `--carbon-700`, paired with vibrant crimson red (`--crimson-700` to `--crimson-300`), emerald gains (`--gain-green`), warm amber, and crisp titanium neutral text (`--text`, `--text-soft`, `--muted`). Category colors also live in `src/settings.js` and `src/App.jsx` so progress rings, tracks, and Recharts visualizations match the CSS tokens.
 
-## Change the bill count
+## Adjust background atmosphere & scroll parallax
 
-Edit the `bills` array in `src/components/AnimatedBackground.jsx`. It currently has 12 notes. The responsive CSS hides later notes on smaller screens, so keep those breakpoints in mind when changing the list size.
+Edit `floatingDollars`, `embers`, and `OrbitalArcs` in `src/components/AnimatedBackground.jsx` to tune the restrained floating `$` markers, ember dust, and crimson orbital arcs. Scroll parallax is driven via `--scroll-y` and `--scroll-progress` in a throttled `requestAnimationFrame` scroll handler, along with the top crimson scroll-progress hairline.
 
-## Adjust animation speed
+## Reduced motion
 
-Change the `speed` values in that same `bills` array to change each note's float duration. The background drift and sparkle timing are in the `@keyframes` and animation declarations in `src/theme.css`. Scroll-scrub timing is tied to page progress and does not need a duration setting.
-
-The background becomes static when `prefers-reduced-motion` is enabled. In browsers without CSS scroll timelines, a throttled `requestAnimationFrame` scroll handler provides the same scrubbed states.
+All background and entrance animations respect `prefers-reduced-motion: reduce` and automatically pause when the browser tab is hidden.
