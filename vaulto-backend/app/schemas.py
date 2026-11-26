@@ -33,6 +33,8 @@ class TransactionCreate(BaseModel):
     direction: str = "add"
     amount: float = Field(gt=0, le=1000000000)
     description: str = Field(default="", max_length=200)
+    note: str | None = None
+    payment_method: str | None = None
     transaction_date: date | None = None
 
     @field_validator("category")
@@ -50,6 +52,14 @@ class TransactionCreate(BaseModel):
             raise ValueError("direction must be 'add' or 'remove'")
         return value
 
+    @field_validator("payment_method")
+    @classmethod
+    def validate_payment_method(cls, value):
+        allowed = {"Cash", "UPI", "Net Banking", "Card Payment"}
+        if value is not None and value not in allowed:
+            raise ValueError(f"payment_method must be one of: {', '.join(sorted(allowed))}")
+        return value
+
 
 class TransactionOut(BaseModel):
     id: int
@@ -57,6 +67,8 @@ class TransactionOut(BaseModel):
     direction: str
     amount: float
     description: str
+    note: str | None = None
+    payment_method: str | None = None
     transaction_date: datetime
     model_config = ConfigDict(from_attributes=True)
 

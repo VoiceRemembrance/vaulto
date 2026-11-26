@@ -504,14 +504,15 @@ body {
   font-size: 11px;
   font-weight: 600;
 }
+.receipt-pill.added { border-color: rgba(34, 197, 94, .4); background: rgba(34, 197, 94, .08); color: #4ade80; }
+.receipt-pill.removed { border-color: rgba(239, 59, 58, .42); background: rgba(230, 46, 45, .12); color: #fca5a5; }
 .receipt-amount strong {
   display: block;
   margin: 12px 0 6px;
-  color: var(--gain-green);
+  color: #ffffff;
   font: 800 32px "Manrope", sans-serif;
   letter-spacing: -1px;
 }
-.receipt-amount strong.removed { color: var(--crimson-400); }
 .receipt-amount p { margin: 0; color: #ffffff; font-size: 14px; font-weight: 600; }
 
 .receipt-grid {
@@ -528,6 +529,17 @@ body {
 }
 .receipt-grid small { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
 .receipt-grid b { color: #ffffff; font-size: 13px; }
+.receipt-grid b.receipt-method { display: flex; align-items: center; gap: 7px; }
+.receipt-grid b.receipt-method svg { flex: 0 0 auto; color: #ffffff; }
+.receipt-note {
+  margin: -6px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #08080a;
+}
+.receipt-note small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; }
+.receipt-note p { margin: 0; color: #ffffff; font-size: 13px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .danger-btn {
   display: inline-flex;

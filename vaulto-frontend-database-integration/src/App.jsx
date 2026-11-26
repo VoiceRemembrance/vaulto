@@ -6,10 +6,10 @@ import { DEFAULT_SETTINGS, getBuckets } from './settings.js';
 import { AnimatedValue, ToastBanner, useCardSpotlight } from './components/InteractiveEffects.jsx';
 import './settings.css';
 import {
-  ArrowDownLeft, ArrowUpRight, Bell, CalendarDays, ChartNoAxesCombined, Check,
-  ChevronDown, Eye, EyeOff, IndianRupee, LayoutDashboard, LogOut, Menu, Plus,
-  PiggyBank, ReceiptText, Settings, ShieldCheck, ShoppingBag, Sparkles, TrendingUp,
-  Trash2, Wallet, X,
+  ArrowDownLeft, ArrowUpRight, Banknote, Bell, CalendarDays, ChartNoAxesCombined, Check,
+  ChevronDown, CreditCard, Eye, EyeOff, IndianRupee, Landmark, LayoutDashboard, LogOut,
+  Menu, Plus, PiggyBank, ReceiptText, Settings, ShieldCheck, ShoppingBag, Smartphone,
+  Sparkles, TrendingUp, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer,
@@ -330,28 +330,51 @@ function BucketCard({ bucket, target, total, add, remove, onInspect }) {
 }
 
 const QUICK_AMOUNTS = [100, 250, 500, 1000];
+const PAYMENT_METHODS = [
+  { value: 'Cash', Icon: Banknote },
+  { value: 'UPI', Icon: Smartphone },
+  { value: 'Net Banking', Icon: Landmark },
+  { value: 'Card Payment', Icon: CreditCard },
+];
 
 function EntryModal({ bucket, mode, month, close, save }) {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(() => month === currentMonth ? new Date().toISOString().slice(0, 10) : `${month}-01`);
   const [note, setNote] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [paymentMenuOpen, setPaymentMenuOpen] = useState(false);
   const [error, setError] = useState('');
+  const paymentMenuRef = useRef(null);
   const Icon = bucket.Icon;
 
   useEffect(() => {
-    const onKeyDown = event => { if (event.key === 'Escape') close(); };
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        if (paymentMenuOpen) setPaymentMenuOpen(false);
+        else close();
+      }
+    };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [close]);
+  }, [close, paymentMenuOpen]);
+
+  useEffect(() => {
+    if (!paymentMenuOpen) return undefined;
+    const onPointerDown = event => {
+      if (paymentMenuRef.current && !paymentMenuRef.current.contains(event.target)) setPaymentMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [paymentMenuOpen]);
 
   return createPortal(<div className="modal-bg" onMouseDown={close}>
-    <div className="modal modal-pop" role="dialog" aria-modal="true" aria-label={mode === 'remove' ? 'Record a removal' : 'Add a new entry'} onMouseDown={event => event.stopPropagation()}>
+    <div className="modal modal-pop entry-modal" role="dialog" aria-modal="true" aria-label={mode === 'remove' ? 'Record a removal' : 'Add a new entry'} onMouseDown={event => event.stopPropagation()}>
       <div className="modal-head"><div className={`bucket-icon ${bucket.tint}`}><Icon size={19}/></div><div><h3>{mode === 'remove' ? 'Record a removal' : 'Add a new entry'}</h3><small>{bucket.name}</small></div><button className="close" aria-label="Close dialog" onClick={close}><X/></button></div>
       <form onSubmit={event => {
         event.preventDefault();
         if (!title.trim() || Number(amount) <= 0) { setError('Enter a description and an amount greater than zero.'); return; }
-        save({ title: title.trim(), amount: Number(amount), date, note: note.trim(), bucket: bucket.id, direction: mode });
+        save({ title: title.trim(), amount: Number(amount), date, note: note.trim(), paymentMethod, bucket: bucket.id, direction: mode });
       }}>
         <label>Description<input autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="e.g. Monthly contribution"/></label>
         <label>Amount (₹)<div className="amount"><IndianRupee size={16}/><input type="number" min="1" step="1" value={amount} onChange={event => setAmount(event.target.value)} placeholder="0"/></div></label>
@@ -366,6 +389,42 @@ function EntryModal({ bucket, mode, month, close, save }) {
               +₹{preset.toLocaleString('en-IN')}
             </button>
           ))}
+        </div>
+        <div className="payment-field">
+          <span className="payment-label">Method of transaction</span>
+          <div className="payment-select-wrap" ref={paymentMenuRef}>
+            <button
+              type="button"
+              className={paymentMenuOpen ? 'payment-select open' : 'payment-select'}
+              aria-haspopup="listbox"
+              aria-expanded={paymentMenuOpen}
+              aria-label={`Method of transaction: ${paymentMethod}`}
+              onClick={() => setPaymentMenuOpen(open => !open)}
+            >
+              {(() => {
+                const SelectedIcon = PAYMENT_METHODS.find(method => method.value === paymentMethod)?.Icon || Wallet;
+                return <><span><SelectedIcon size={15}/>{paymentMethod}</span><ChevronDown size={14}/></>;
+              })()}
+            </button>
+            {paymentMenuOpen && (
+              <div className="payment-options" role="listbox" aria-label="Payment methods">
+                {PAYMENT_METHODS.map(method => {
+                  const MethodIcon = method.Icon;
+                  const selected = paymentMethod === method.value;
+                  return <button
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    className={selected ? 'payment-option selected' : 'payment-option'}
+                    key={method.value}
+                    onClick={() => { setPaymentMethod(method.value); setPaymentMenuOpen(false); }}
+                  >
+                    <MethodIcon size={14}/><span>{method.value}</span>{selected && <Check size={14}/>}
+                  </button>;
+                })}
+              </div>
+            )}
+          </div>
         </div>
         <label>Date<input type="date" value={date} onChange={event => setDate(event.target.value)}/></label>
         <label><span>Note <small>(optional)</small></span><textarea rows="2" value={note} onChange={event => setNote(event.target.value)} placeholder="Add a little context..."/></label>
@@ -461,6 +520,8 @@ function BucketInspectorModal({ bucket, target, total, entries, close, onAction,
 function EntryDetailModal({ entry, bucket, income, close, onDelete }) {
   const Icon = bucket.Icon;
   const share = income > 0 ? ((entry.amount / income) * 100).toFixed(1) : '0.0';
+  const payment = PAYMENT_METHODS.find(method => method.value === entry.payment_method);
+  const PaymentIcon = payment?.Icon || Wallet;
 
   useEffect(() => {
     const onKeyDown = event => { if (event.key === 'Escape') close(); };
@@ -481,12 +542,10 @@ function EntryDetailModal({ entry, bucket, income, close, onDelete }) {
         </div>
 
         <div className="receipt-amount">
-          <span className="receipt-pill">
-            <ReceiptText size={13}/> {entry.direction === 'remove' ? 'Removal recorded' : 'Contribution logged'}
+          <span className={entry.direction === 'remove' ? 'receipt-pill removed' : 'receipt-pill added'}>
+            <ReceiptText size={13}/> {entry.direction === 'remove' ? 'Entry removed' : 'Entry added'}
           </span>
-          <strong className={entry.direction === 'remove' ? 'removed' : ''}>
-            {entry.direction === 'remove' ? '−' : '+'}{money(entry.amount)}
-          </strong>
+          <strong>{money(entry.amount)}</strong>
           <p>{entry.title}</p>
         </div>
 
@@ -504,10 +563,17 @@ function EntryDetailModal({ entry, bucket, income, close, onDelete }) {
             <b>{bucket.name}</b>
           </div>
           <div>
-            <small>Type</small>
-            <b>{entry.direction === 'remove' ? 'Debit / Removal' : 'Credit / Allocation'}</b>
+            <small>Method of transaction</small>
+            <b className="receipt-method"><PaymentIcon size={14}/>{entry.payment_method || 'Not specified'}</b>
           </div>
         </div>
+
+        {entry.note?.trim() && (
+          <section className="receipt-note">
+            <small>Note</small>
+            <p>{entry.note}</p>
+          </section>
+        )}
 
         <div className="modal-actions">
           <button type="button" className="cancel" onClick={close}>Close</button>
@@ -867,7 +933,7 @@ export default function App() {
   async function saveEntry(entry) {
     setError('');
     try {
-      await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, note: entry.note || null, transaction_date: entry.date });
+      await api.createTransaction({ category: entry.bucket, direction: entry.direction, amount: entry.amount, description: entry.title, note: entry.note || null, payment_method: entry.paymentMethod, transaction_date: entry.date });
       setModal(null);
       await loadFinancialData();
       showToast(
