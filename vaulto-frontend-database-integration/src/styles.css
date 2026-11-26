@@ -595,6 +595,36 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   background: #141013;
 }
 .month-pill svg.rotated { transform: rotate(180deg); transition: transform var(--ease); }
+.month-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #0d0d10;
+  color: #ffffff;
+  transition: border-color var(--ease), background var(--ease);
+}
+.month-selector:focus-within { border-color: rgba(239, 59, 58, .45); background: #141013; }
+.month-selector > svg { flex: 0 0 auto; }
+.month-select-control { display: inline-flex; align-items: center; gap: 3px; }
+.month-select-control select {
+  width: 105px;
+  padding: 2px 0;
+  border: 0;
+  appearance: none;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  font: 600 12.5px Inter, sans-serif;
+  cursor: pointer;
+}
+.month-select-control select option { background: #0e0e11; color: #ffffff; }
+.month-select-control select:disabled { opacity: .55; cursor: not-allowed; }
+.month-select-control > svg { flex: 0 0 auto; color: var(--muted); pointer-events: none; }
+.year-select-control { padding-left: 9px; border-left: 1px solid var(--line); }
+.year-select-control select { width: 48px; }
 
 /* Hero Monthly Income Card — Matte Black Carbon + Directional Crimson Ember Glow */
 .income-card {
@@ -1141,6 +1171,7 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   .welcome { align-items: flex-start; flex-direction: column; margin-bottom: 22px; }
   .welcome h1 { font-size: 32px; }
   .month-pill { align-self: flex-start; }
+  .month-selector { align-self: flex-start; }
   .income-card { padding: 22px; }
   .income-stats { gap: 20px; }
   .section-title { align-items: flex-start; flex-direction: column; margin-top: 28px; }
@@ -1157,6 +1188,9 @@ main { position: relative; z-index: 1; min-height: 100vh; margin-left: 254px; }
   .bucket-grid { grid-template-columns: 1fr; }
   .income-number { font-size: 28px; }
   .income-stats { width: auto; justify-content: flex-end; gap: 12px; }
+  .month-selector { max-width: 100%; gap: 7px; padding: 8px 10px; }
+  .month-select-control select { width: 96px; }
+  .year-select-control select { width: 44px; }
   .activity-panel { padding: 14px; }
   .activity-row {
     grid-template-columns: 38px minmax(0, 1fr) 28px;

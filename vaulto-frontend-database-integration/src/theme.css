@@ -350,7 +350,6 @@ body {
   box-shadow: 0 28px 76px rgba(0, 0, 0, .88);
   animation: popover-drop 200ms cubic-bezier(.16, 1, .3, 1) both;
 }
-.month-popover { width: 270px; }
 .popover-head {
   display: flex;
   align-items: flex-start;
@@ -415,21 +414,6 @@ body {
   transition: background var(--ease), transform var(--ease);
 }
 .popover-cta:hover { background: var(--crimson-500); transform: translateY(-1px); }
-
-.month-popover-rows { display: flex; flex-direction: column; gap: 8px; }
-.month-popover-rows > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 9px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #08080a;
-  font-size: 12.5px;
-  color: var(--text-soft);
-}
-.month-popover-rows b { color: #ffffff; font-family: "Manrope", sans-serif; }
-.month-popover-rows b.gain-text { color: var(--gain-green); }
 
 /* Bucket Quick-Inspector Modal */
 .inspector-modal { width: min(100%, 520px); }

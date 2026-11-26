@@ -26,6 +26,11 @@ const monthLabel = key => {
   return new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
 };
 const currentMonth = monthKey();
+const monthOptions = Array.from({ length: 12 }, (_, index) => {
+  const value = String(index + 1).padStart(2, '0');
+  const label = new Date(2000, index, 1).toLocaleDateString('en-IN', { month: 'long' });
+  return { value, label };
+});
 
 function totals(entries, month) {
   const result = { expense: 0, savings: 0, investment: 0, emergency: 0 };
@@ -33,6 +38,18 @@ function totals(entries, month) {
     result[entry.bucket] += entry.direction === 'remove' ? -entry.amount : entry.amount;
   });
   return result;
+}
+
+function allocationTargets(income, buckets) {
+  return Object.fromEntries(buckets.map(bucket => [
+    bucket.id,
+    Number((income * bucket.pct / 100).toFixed(2)),
+  ]));
+}
+
+function monthName(month) {
+  const [year, value] = month.split('-').map(Number);
+  return new Date(year, value - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
 
 function Brand() {
@@ -175,7 +192,7 @@ function Sidebar({ page, setPage, user, logout, open, setOpen }) {
   </>;
 }
 
-function Header({ page, setOpen, user, data, buckets, onOpenSettings }) {
+function Header({ page, setOpen, user, data, buckets, month, onOpenSettings }) {
   const [pulseOpen, setPulseOpen] = useState(false);
   const pulseRef = useRef(null);
   const pageName = { overview: 'Overview', analytics: 'Analytics', settings: 'Settings' }[page];
@@ -197,18 +214,19 @@ function Header({ page, setOpen, user, data, buckets, onOpenSettings }) {
   }, [pulseOpen]);
 
   const pulse = useMemo(() => {
-    const income = Number(data.income[currentMonth] || 0);
-    const currentTotals = totals(data.entries, currentMonth);
+    const income = Number(data.income[month] || 0);
+    const currentTotals = totals(data.entries, month);
+    const targets = month === currentMonth ? data.targets : allocationTargets(income, buckets);
     const allocated = buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0);
     const goalsReached = buckets.filter(bucket => {
-      const target = Number(data.targets[bucket.id] || 0);
+      const target = Number(targets[bucket.id] || 0);
       return target > 0 && Math.max(0, currentTotals[bucket.id]) >= target;
     }).length;
     const unallocated = Math.max(0, income - allocated);
     const score = income > 0 ? Math.min(100, Math.round((allocated / income) * 100)) : 0;
-    const monthEntries = data.entries.filter(entry => entry.month === currentMonth && entry.bucket !== 'income').length;
+    const monthEntries = data.entries.filter(entry => entry.month === month && entry.bucket !== 'income').length;
     return { income, allocated, unallocated, goalsReached, score, monthEntries };
-  }, [data, buckets]);
+  }, [data, buckets, month]);
 
   return <header className="topbar">
     <button className="hamb" aria-label="Open navigation" onClick={() => setOpen(true)}><Menu/></button>
@@ -313,10 +331,10 @@ function BucketCard({ bucket, target, total, add, remove, onInspect }) {
 
 const QUICK_AMOUNTS = [100, 250, 500, 1000];
 
-function EntryModal({ bucket, mode, close, save }) {
+function EntryModal({ bucket, mode, month, close, save }) {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => month === currentMonth ? new Date().toISOString().slice(0, 10) : `${month}-01`);
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const Icon = bucket.Icon;
@@ -507,40 +525,31 @@ function EntryDetailModal({ entry, bucket, income, close, onDelete }) {
   );
 }
 
-function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) {
-  const income = Number(data.income[currentMonth] || 0);
-  const currentTotals = totals(data.entries, currentMonth);
+function Overview({ data, buckets, month, onMonthChange, onSetIncome, open, del, busy, error, user }) {
+  const selectedYear = Number(month.slice(0, 4));
+  const selectedMonthValue = month.slice(5, 7);
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonthValue = String(today.getMonth() + 1).padStart(2, '0');
+  const years = Array.from({ length: currentYear - 1899 }, (_, index) => currentYear - index);
+  const income = Number(data.income[month] || 0);
+  const currentTotals = totals(data.entries, month);
+  const targets = month === currentMonth ? data.targets : allocationTargets(income, buckets);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(income));
   const [savingIncome, setSavingIncome] = useState(false);
-  const [monthSummaryOpen, setMonthSummaryOpen] = useState(false);
   const [inspectBucket, setInspectBucket] = useState(null);
   const [inspectEntry, setInspectEntry] = useState(null);
-  const monthRef = useRef(null);
 
   useEffect(() => {
-    if (!monthSummaryOpen) return undefined;
-    const onPointerDown = event => {
-      if (monthRef.current && !monthRef.current.contains(event.target)) setMonthSummaryOpen(false);
-    };
-    const onKeyDown = event => {
-      if (event.key === 'Escape') setMonthSummaryOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [monthSummaryOpen]);
+    if (!editing) setValue(String(income));
+  }, [income, month, editing]);
 
   const monthEntries = data.entries
-    .filter(entry => entry.month === currentMonth && entry.bucket !== 'income')
+    .filter(entry => entry.month === month)
     .slice()
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-  const recent = monthEntries.slice(0, 6);
+    .sort((a, b) => new Date(b.date) - new Date(a.date) || Number(b.id) - Number(a.id));
   const allocatedTotal = buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0);
-  const unallocated = Math.max(0, income - allocatedTotal);
   const firstName = user?.name?.split(' ')[0] || 'there';
 
   return <div className="content">
@@ -550,33 +559,44 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
         <h1>Welcome, <em>{firstName}</em></h1>
         <p>A clear view of where your pocket money goes — and how every rupee builds your future.</p>
       </div>
-      <div className="month-anchor" ref={monthRef}>
-        <button
-          type="button"
-          className={monthSummaryOpen ? 'month-pill active' : 'month-pill'}
-          onClick={() => setMonthSummaryOpen(openState => !openState)}
-          aria-expanded={monthSummaryOpen}
-        >
+      <div className="month-anchor">
+        <div className="month-selector">
           <CalendarDays size={15}/>
-          {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
-          <ChevronDown size={14} className={monthSummaryOpen ? 'rotated' : ''}/>
-        </button>
-        {monthSummaryOpen && (
-          <div className="helios-popover month-popover" role="dialog" aria-label="Monthly summary">
-            <div className="popover-head">
-              <div>
-                <small>MONTHLY BRIEF</small>
-                <h4>{new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</h4>
-              </div>
-              <span className="pulse-badge">{monthEntries.length} logs</span>
-            </div>
-            <div className="month-popover-rows">
-              <div><span>Pocket money</span><b>{money(income)}</b></div>
-              <div><span>Allocated</span><b className="gain-text">{money(allocatedTotal)}</b></div>
-              <div><span>Unallocated</span><b>{money(unallocated)}</b></div>
-            </div>
+          <div className="month-select-control">
+            <select
+              aria-label="Select month"
+              value={selectedMonthValue}
+              disabled={editing || savingIncome}
+              onChange={event => onMonthChange(`${selectedYear}-${event.target.value}`)}
+            >
+              {monthOptions.map(option => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={selectedYear === currentYear && Number(option.value) > Number(currentMonthValue)}
+                >{option.label}</option>
+              ))}
+            </select>
+            <ChevronDown size={13}/>
           </div>
-        )}
+          <div className="month-select-control year-select-control">
+            <select
+              aria-label="Select year"
+              value={selectedYear}
+              disabled={editing || savingIncome}
+              onChange={event => {
+                const year = Number(event.target.value);
+                const safeMonth = year === currentYear && Number(selectedMonthValue) > Number(currentMonthValue)
+                  ? currentMonthValue
+                  : selectedMonthValue;
+                onMonthChange(`${year}-${safeMonth}`);
+              }}
+            >
+              {years.map(year => <option key={year} value={year}>{year}</option>)}
+            </select>
+            <ChevronDown size={13}/>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -584,20 +604,21 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
 
     <section className="income-card spotlight-card"><div>
       <span className="income-label"><Wallet size={16}/> MONTHLY INCOME</span>
-      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0)); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number"><AnimatedValue value={income} format={money}/> <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
+      {editing ? <div className="income-edit">₹<input type="number" min="0" value={value} onChange={event => setValue(event.target.value)}/><button disabled={savingIncome} onClick={async () => { setSavingIncome(true); const saved = await onSetIncome(Math.max(0, Number(value) || 0), month); setSavingIncome(false); if (saved) setEditing(false); }}><Check size={16}/></button><button onClick={() => setEditing(false)}><X size={16}/></button></div> : <div className="income-number"><AnimatedValue value={income} format={money}/> <button onClick={() => { setValue(String(income)); setEditing(true); }}>Edit income <ArrowUpRight size={13}/></button></div>}
       <p>Your income is the starting point for this month's pocket money plan.</p>
     </div><div className="income-stats"><div><small>Allocated so far</small><b><AnimatedValue value={allocatedTotal} format={money}/></b></div></div><span className="rupee-art">$</span></section>
 
     <div className="section-title"><div><small>YOUR PERSONAL ALLOCATION PLAN</small><h2>Your monthly buckets</h2><p>Recommended amounts based on your income. Click any card to inspect details or log an entry.</p></div></div>
-    <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(data.targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open} onInspect={setInspectBucket}/>)}</div>
+    <div className="bucket-grid">{buckets.map(bucket => <BucketCard key={bucket.id} bucket={bucket} income={income} target={Number(targets[bucket.id] || 0)} total={currentTotals[bucket.id]} add={open} remove={open} onInspect={setInspectBucket}/>)}</div>
 
     <section className="activity-panel spotlight-card">
       <div className="activity-heading">
         <span className="activity-heading-icon"><ReceiptText size={18}/></span>
         <div><h2>Latest Activity</h2><p>Your recent entries</p></div>
       </div>
-      <div className="activity-list">{busy ? <div className="empty">Loading your financial records…</div> : recent.length ? recent.map(entry => {
-      const bucket = buckets.find(item => item.id === entry.bucket);
+      <div className="activity-list">{busy ? <div className="empty">Loading your financial records…</div> : monthEntries.length ? monthEntries.map(entry => {
+      const bucket = buckets.find(item => item.id === entry.bucket)
+        || (entry.bucket === 'income' ? { id: 'income', name: 'Income', tint: 'mint', Icon: Wallet } : null);
       if (!bucket) return null;
       const Icon = bucket.Icon;
       return <div
@@ -623,14 +644,14 @@ function Overview({ data, buckets, onSetIncome, open, del, busy, error, user }) 
         <span className="activity-status">{entry.direction === 'remove' ? 'Entry removed' : 'Entry added'}</span>
         <button onClick={event => { event.stopPropagation(); del(entry.id); }} title="Delete entry" aria-label={`Delete ${entry.title}`}><Trash2 size={15}/></button>
       </div>;
-    }) : <div className="empty">No entries yet. Add your first transaction to start tracking.</div>}</div>
+    }) : <div className="empty">No transactions recorded for {monthName(month)}.</div>}</div>
     </section>
     <p className="disclaimer"><ShieldCheck size={14}/> Planning guideline, not financial advice. {buckets.find(bucket => bucket.id === 'investment')?.name} values show contributions only — not market returns.</p>
 
     {inspectBucket && (
       <BucketInspectorModal
         bucket={inspectBucket}
-        target={Number(data.targets[inspectBucket.id] || 0)}
+        target={Number(targets[inspectBucket.id] || 0)}
         total={currentTotals[inspectBucket.id]}
         entries={monthEntries.filter(entry => entry.bucket === inspectBucket.id)}
         close={() => setInspectBucket(null)}
@@ -704,6 +725,7 @@ export default function App() {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [data, setData] = useState({ income: {}, entries: [], targets: {} });
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [page, setPage] = useState('overview');
   const [modal, setModal] = useState(null);
   const [menu, setMenu] = useState(false);
@@ -730,16 +752,17 @@ export default function App() {
     try {
       const [summary, records] = await Promise.all([api.summary(currentMonth), api.transactions()]);
       const entries = records.map(record => {
-        const date = new Date(record.transaction_date);
-        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, note: record.note || '', date: record.transaction_date, month: monthKey(date) };
+        const date = record.transaction_date;
+        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, note: record.note || '', date, month: String(date).slice(0, 7) };
       });
       const income = {};
       for (const record of records) {
         if (record.category === 'income') {
-          const month = monthKey(new Date(record.transaction_date));
+          const month = String(record.transaction_date).slice(0, 7);
           income[month] = (income[month] || 0) + (record.direction === 'remove' ? -Number(record.amount) : Number(record.amount));
         }
       }
+      for (const month of Object.keys(income)) income[month] = Math.max(0, income[month]);
       income[currentMonth] = Number(summary.income) || 0;
       setData({ income, entries, targets: summary.allocation_targets });
     } catch (requestError) {
@@ -809,6 +832,7 @@ export default function App() {
     setSettingsLoaded(false);
     setSettingsDirty(false);
     setData({ income: {}, entries: [], targets: {} });
+    setSelectedMonth(currentMonth);
     setError('');
   }
 
@@ -867,8 +891,8 @@ export default function App() {
     }
   }
 
-  async function setIncome(nextIncome) {
-    const previous = Number(data.income[currentMonth] || 0);
+  async function setIncome(nextIncome, month = currentMonth) {
+    const previous = Number(data.income[month] || 0);
     const difference = nextIncome - previous;
     if (!difference) return true;
     try {
@@ -877,7 +901,7 @@ export default function App() {
         direction: difference > 0 ? 'add' : 'remove',
         amount: Math.abs(difference),
         description: difference > 0 ? 'Monthly income added' : 'Monthly income adjustment',
-        transaction_date: new Date().toISOString().slice(0, 10),
+        transaction_date: month === currentMonth ? new Date().toISOString().slice(0, 10) : `${month}-01`,
       });
       await loadFinancialData();
       showToast('Monthly income updated', `New monthly target base: ${money(nextIncome)}`, 'sparkle');
@@ -895,15 +919,15 @@ export default function App() {
   return <div className="app">
     <Sidebar page={page} setPage={navigate} user={user} logout={logout} open={menu} setOpen={setMenu}/>
     <main>
-      <Header page={page} setOpen={setMenu} user={user} data={data} buckets={buckets} onOpenSettings={() => navigate('settings')}/>
+      <Header page={page} setOpen={setMenu} user={user} data={data} buckets={buckets} month={page === 'overview' ? selectedMonth : currentMonth} onOpenSettings={() => navigate('settings')}/>
       {error && page !== 'overview' && <p className="error app-error" role="alert">{error}</p>}
       <div key={page} className="page-stage">
-        {page === 'overview' && <Overview data={data} buckets={buckets} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error} user={user}/>}
+        {page === 'overview' && <Overview data={data} buckets={buckets} month={selectedMonth} onMonthChange={setSelectedMonth} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error} user={user}/>}
         {page === 'analytics' && <Analytics data={data} buckets={buckets}/>}
         {page === 'settings' && <SettingsPage settings={settings} onSave={saveSettings} onRestore={restoreSettings} onDirtyChange={onSettingsDirtyChange}/>}
       </div>
     </main>
-    {modal && <EntryModal bucket={modal.bucket} mode={modal.mode} close={() => setModal(null)} save={saveEntry}/>}
+    {modal && <EntryModal bucket={modal.bucket} mode={modal.mode} month={selectedMonth} close={() => setModal(null)} save={saveEntry}/>}
     <ToastBanner toast={toast} onDismiss={() => setToast(null)}/>
   </div>;
 }
