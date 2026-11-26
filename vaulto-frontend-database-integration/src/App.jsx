@@ -6,10 +6,10 @@ import { DEFAULT_SETTINGS, getBuckets } from './settings.js';
 import { AnimatedValue, ToastBanner, useCardSpotlight } from './components/InteractiveEffects.jsx';
 import './settings.css';
 import {
-  ArrowDownLeft, ArrowUpRight, Banknote, Bell, CalendarDays, ChartNoAxesCombined, Check,
+  ArrowDownLeft, ArrowUpRight, Banknote, CalendarDays, ChartNoAxesCombined, Check,
   ChevronDown, CreditCard, Eye, EyeOff, IndianRupee, Landmark, LayoutDashboard, LogOut,
   Menu, Plus, PiggyBank, ReceiptText, Settings, ShieldCheck, ShoppingBag, Smartphone,
-  Sparkles, TrendingUp, Trash2, Wallet, X,
+  TrendingUp, Trash2, Wallet, X,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer,
@@ -164,134 +164,51 @@ function Auth({ done }) {
   );
 }
 
-function Sidebar({ page, setPage, user, logout, open, setOpen }) {
-  const navigate = nextPage => {
-    setPage(nextPage);
-    setOpen(false);
+function Header({ page, navigate, user, logout, menuOpen, setMenuOpen }) {
+  const links = [
+    { id: 'overview', label: 'Overview', Icon: LayoutDashboard },
+    { id: 'analytics', label: 'Analytics', Icon: ChartNoAxesCombined },
+    { id: 'settings', label: 'Settings', Icon: Settings },
+  ];
+  const goTo = nextPage => {
+    navigate(nextPage);
+    setMenuOpen(false);
   };
-  return <>
-    <div className={open ? 'scrim show' : 'scrim'} onClick={() => setOpen(false)}/>
-    <aside className={open ? 'sidebar opened' : 'sidebar'}>
-      <Brand/>
-      <div className="nav-label">WORKSPACE</div>
-      <button className={page === 'overview' ? 'nav active' : 'nav'} onClick={() => navigate('overview')}><LayoutDashboard size={18}/>Overview</button>
-      <button className={page === 'analytics' ? 'nav active' : 'nav'} onClick={() => navigate('analytics')}><ChartNoAxesCombined size={18}/>Analytics</button>
-      <button className={page === 'settings' ? 'nav active' : 'nav'} onClick={() => navigate('settings')}><Settings size={18}/>Settings</button>
-      <div className="side-tip spotlight-card">
-        <Sparkles size={19}/>
-        <b>Accountability Pays Off</b>
-        <p>Give every rupee a job and track your student pocket money effortlessly.</p>
-      </div>
-      <div className="profile">
-        <div className="avatar">{user.name[0].toUpperCase()}</div>
-        <div><b>{user.name}</b><small>{user.is_guest ? 'Guest account' : user.email}</small></div>
-        <button onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={16}/></button>
-      </div>
-      <small className="version">VAULTO · STUDENT PILOT 1.0</small>
-    </aside>
-  </>;
-}
-
-function Header({ page, setOpen, user, data, buckets, month, onOpenSettings }) {
-  const [pulseOpen, setPulseOpen] = useState(false);
-  const pulseRef = useRef(null);
-  const pageName = { overview: 'Overview', analytics: 'Analytics', settings: 'Settings' }[page];
 
   useEffect(() => {
-    if (!pulseOpen) return undefined;
-    const onPointerDown = event => {
-      if (pulseRef.current && !pulseRef.current.contains(event.target)) setPulseOpen(false);
-    };
-    const onKeyDown = event => {
-      if (event.key === 'Escape') setPulseOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
+    if (!menuOpen) return undefined;
+    const onKeyDown = event => { if (event.key === 'Escape') setMenuOpen(false); };
     window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [pulseOpen]);
-
-  const pulse = useMemo(() => {
-    const income = Number(data.income[month] || 0);
-    const currentTotals = totals(data.entries, month);
-    const targets = month === currentMonth ? data.targets : allocationTargets(income, buckets);
-    const allocated = buckets.reduce((sum, bucket) => sum + Math.max(0, currentTotals[bucket.id]), 0);
-    const goalsReached = buckets.filter(bucket => {
-      const target = Number(targets[bucket.id] || 0);
-      return target > 0 && Math.max(0, currentTotals[bucket.id]) >= target;
-    }).length;
-    const unallocated = Math.max(0, income - allocated);
-    const score = income > 0 ? Math.min(100, Math.round((allocated / income) * 100)) : 0;
-    const monthEntries = data.entries.filter(entry => entry.month === month && entry.bucket !== 'income').length;
-    return { income, allocated, unallocated, goalsReached, score, monthEntries };
-  }, [data, buckets, month]);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen, setMenuOpen]);
 
   return <header className="topbar">
-    <button className="hamb" aria-label="Open navigation" onClick={() => setOpen(true)}><Menu/></button>
-    <div className="crumb">Workspace / <b>{pageName}</b></div>
+    <Brand/>
+    <nav className={menuOpen ? 'header-nav open' : 'header-nav'} aria-label="Main navigation">
+      {links.map(({ id, label, Icon }) => <button
+        key={id}
+        className={page === id ? 'nav active' : 'nav'}
+        aria-current={page === id ? 'page' : undefined}
+        onClick={() => goTo(id)}
+      ><Icon size={17}/>{label}</button>)}
+    </nav>
+    <button
+      type="button"
+      className="hamb"
+      aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+      aria-expanded={menuOpen}
+      onClick={() => setMenuOpen(open => !open)}
+    >{menuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
     <div className="top-right">
-      <span className="date-chip"><CalendarDays size={15}/> {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-      <div className="pulse-anchor" ref={pulseRef}>
-        <button
-          className={pulseOpen ? 'bell active' : 'bell'}
-          onClick={() => setPulseOpen(openState => !openState)}
-          aria-label="Accountability pulse notifications"
-          aria-expanded={pulseOpen}
-          title="Accountability Pulse"
-        >
-          <Bell size={18}/>
-          {pulse.monthEntries > 0 && <i className="bell-dot" aria-hidden="true"/>}
-        </button>
-        {pulseOpen && (
-          <div className="helios-popover pulse-popover" role="dialog" aria-label="Accountability Pulse">
-            <div className="popover-head">
-              <div>
-                <small>ACCOUNTABILITY PULSE</small>
-                <h4>Pocket Money Health</h4>
-              </div>
-              <span className="pulse-badge">{pulse.score}% tracked</span>
-            </div>
-            <div className="pulse-metrics">
-              <div>
-                <small>Goals reached</small>
-                <b>{pulse.goalsReached} / {buckets.length}</b>
-              </div>
-              <div>
-                <small>Unallocated left</small>
-                <b>{money(pulse.unallocated)}</b>
-              </div>
-              <div>
-                <small>Entries logged</small>
-                <b>{pulse.monthEntries}</b>
-              </div>
-            </div>
-            <div className="pulse-bar">
-              <i style={{ width: `${pulse.score}%` }}/>
-            </div>
-            <p className="pulse-note">
-              {pulse.income === 0
-                ? 'Set your monthly pocket money on Overview to unlock personalized accountability milestones.'
-                : pulse.goalsReached === buckets.length
-                  ? 'Every monthly bucket reached its target. Outstanding discipline!'
-                  : `${money(pulse.allocated)} allocated out of ${money(pulse.income)} this month.`}
-            </p>
-            <button
-              type="button"
-              className="popover-cta"
-              onClick={() => { setPulseOpen(false); onOpenSettings(); }}
-            >
-              Customize split <ArrowUpRight size={14}/>
-            </button>
-          </div>
-        )}
+      <span className="date-chip"><CalendarDays size={15}/>{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+      <div className="header-profile">
+        <div className="header-user"><b>{user.name}</b><small>{user.is_guest ? 'Guest account' : user.email}</small></div>
+        <button className="header-logout" onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={16}/></button>
+        <div className="avatar" title={user.name}>{user.name[0].toUpperCase()}</div>
       </div>
-      <div className="avatar" title={user.name}>{user.name[0].toUpperCase()}</div>
     </div>
   </header>;
 }
-
 function Ring({ value, color }) {
   const circumference = 2 * Math.PI * 35;
   return <div className="ring"><svg viewBox="0 0 84 84">
@@ -983,9 +900,8 @@ export default function App() {
   if (!settingsLoaded) return <div className="auth"><section className="auth-panel"><div className="auth-inner"><Brand/><h2>Loading your settings</h2>{error && <p className="error" role="alert">{error}</p>}<button className="primary" onClick={retrySettings}>Retry <ArrowUpRight size={15}/></button></div></section></div>;
 
   return <div className="app">
-    <Sidebar page={page} setPage={navigate} user={user} logout={logout} open={menu} setOpen={setMenu}/>
+    <Header page={page} navigate={navigate} user={user} logout={logout} menuOpen={menu} setMenuOpen={setMenu}/>
     <main>
-      <Header page={page} setOpen={setMenu} user={user} data={data} buckets={buckets} month={page === 'overview' ? selectedMonth : currentMonth} onOpenSettings={() => navigate('settings')}/>
       {error && page !== 'overview' && <p className="error app-error" role="alert">{error}</p>}
       <div key={page} className="page-stage">
         {page === 'overview' && <Overview data={data} buckets={buckets} month={selectedMonth} onMonthChange={setSelectedMonth} onSetIncome={setIncome} open={(bucket, mode) => setModal({ bucket, mode })} del={deleteEntry} busy={busy} error={error} user={user}/>}

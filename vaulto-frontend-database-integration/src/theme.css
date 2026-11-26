@@ -334,87 +334,6 @@ body {
   color: #ffffff;
 }
 
-/* Opaque Matte Carbon Popovers (Accountability Pulse & Monthly Brief) */
-.helios-popover {
-  position: absolute;
-  z-index: 35;
-  top: calc(100% + 12px);
-  right: 0;
-  width: 324px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 16px;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(230, 46, 45, .16), transparent 56%),
-    linear-gradient(165deg, #131317 0%, #09090b 100%);
-  box-shadow: 0 28px 76px rgba(0, 0, 0, .88);
-  animation: popover-drop 200ms cubic-bezier(.16, 1, .3, 1) both;
-}
-.popover-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.popover-head small { color: var(--crimson-400); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
-.popover-head h4 { margin: 4px 0 0; color: #ffffff; font: 700 15.5px "Manrope", sans-serif; }
-.pulse-badge {
-  padding: 4px 10px;
-  border: 1px solid rgba(34, 197, 94, .32);
-  border-radius: 999px;
-  background: rgba(34, 197, 94, .12);
-  color: var(--gain-green);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.pulse-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.pulse-metrics > div {
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #08080a;
-}
-.pulse-metrics small { display: block; color: var(--muted); font-size: 10px; margin-bottom: 4px; }
-.pulse-metrics b { color: #ffffff; font: 700 13.5px "Manrope", sans-serif; }
-.pulse-bar {
-  height: 5px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .08);
-  margin-bottom: 12px;
-}
-.pulse-bar i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--crimson-600), var(--crimson-400));
-  box-shadow: 0 0 10px rgba(230, 46, 45, .6);
-}
-.pulse-note { margin: 0 0 14px; color: var(--text-soft); font-size: 12px; line-height: 1.55; }
-.popover-cta {
-  display: inline-flex;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 14px;
-  border: 1px solid rgba(239, 59, 58, .35);
-  border-radius: 999px;
-  background: rgba(230, 46, 45, .14);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  transition: background var(--ease), transform var(--ease);
-}
-.popover-cta:hover { background: var(--crimson-500); transform: translateY(-1px); }
-
 /* Bucket Quick-Inspector Modal */
 .inspector-modal { width: min(100%, 520px); }
 .inspector-hero {
@@ -617,10 +536,6 @@ body {
   from { opacity: 0; transform: translateY(14px) scale(.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes popover-drop {
-  from { opacity: 0; transform: translateY(-6px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(14px) scale(.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -661,7 +576,6 @@ body.is-hidden .animated-background *::after {
 @media (max-width: 760px) {
   .dollar-glyph:nth-child(n + 5) { display: none; }
   .ember-dot:nth-child(n + 5) { display: none; }
-  .helios-popover { width: min(310px, calc(100vw - 32px)); }
   .helios-toast { right: 16px; left: 16px; bottom: 16px; max-width: none; }
 }
 @media (max-width: 480px) {
