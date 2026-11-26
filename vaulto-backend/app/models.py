@@ -62,7 +62,7 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(Float)
     description: Mapped[str] = mapped_column(String(200), default="")
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    payment_method: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    payment_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
     transaction_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     user: Mapped[User] = relationship(back_populates="transactions")
