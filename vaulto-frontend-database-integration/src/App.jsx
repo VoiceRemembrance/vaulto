@@ -819,7 +819,7 @@ export default function App() {
       const [summary, records] = await Promise.all([api.summary(currentMonth), api.transactions()]);
       const entries = records.map(record => {
         const date = record.transaction_date;
-        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, note: record.note || '', date, month: String(date).slice(0, 7) };
+        return { id: record.id, bucket: record.category, direction: record.direction, amount: Number(record.amount), title: record.description, note: record.note || '', payment_method: record.payment_method ?? null, date, month: String(date).slice(0, 7) };
       });
       const income = {};
       for (const record of records) {
